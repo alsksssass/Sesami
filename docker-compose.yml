@@ -1,0 +1,104 @@
+version: '3.8'
+
+# 공통 네트워크 정의
+networks:
+  analyzer-net:
+    driver: bridge
+
+# 서비스 정의
+services:
+  # 프론트엔드 (React/Vite/Vue)
+  frontend:
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+    command: npm run dev
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_BACKEND_URL=http://localhost:${BACKEND_PORT}
+    env_file:
+      - .env
+    networks:
+      - analyzer-net
+    depends_on:
+      - backend
+
+  # 백엔드 API 서버
+  backend:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    command: uvicorn main:app --host ${BACKEND_HOST} --port ${BACKEND_PORT} --reload
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    volumes:
+      - ./src/backend:/app
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - QUEUE_BROKER_URL=${QUEUE_BROKER_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+    env_file:
+      - .env
+    networks:
+      - analyzer-net
+    depends_on:
+      - db
+      - queue
+
+  # 워커 (분석 엔진)
+  worker:
+    build:
+      context: ./docker/worker
+      dockerfile: Dockerfile
+    command: celery -A worker.celery_app worker --loglevel=info
+    volumes:
+      - ./src/worker:/app
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - QUEUE_BROKER_URL=${QUEUE_BROKER_URL}
+    env_file:
+      - .env
+    networks:
+      - analyzer-net
+    depends_on:
+      - db
+      - queue
+
+  # PostgreSQL 데이터베이스
+  db:
+    build:
+      context: ./docker/db
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    env_file:
+      - .env
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - analyzer-net
+
+  # Redis 작업 큐
+  queue:
+    build:
+      context: ./docker/queue
+      dockerfile: Dockerfile
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:${REDIS_PORT}"
+    env_file:
+      - .env
+    networks:
+      - analyzer-net
+
+# 영속성 볼륨
+volumes:
+  postgres_data:
+    driver: local
