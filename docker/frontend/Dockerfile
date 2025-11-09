@@ -10,6 +10,6 @@ RUN npm install
 
 # 소스 코드는 볼륨 마운트로 처리
 
-EXPOSE 3000
+EXPOSE 5173
 
 CMD ["npm", "run", "dev"]

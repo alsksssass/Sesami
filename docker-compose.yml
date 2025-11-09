@@ -4,26 +4,6 @@ networks:
 
 # 서비스 정의
 services:
-  # 프론트엔드 (React/Vite/Vue)
-  frontend:
-    build:
-      context: .
-      dockerfile: ./docker/frontend/Dockerfile
-    command: npm run dev
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-    volumes:
-      - ./src/frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_BACKEND_URL=http://localhost:${BACKEND_PORT}
-    env_file:
-      - .env
-    networks:
-      - analyzer-net
-    depends_on:
-      - backend
-
   # 백엔드 API 서버
   backend:
     build:
@@ -96,7 +76,72 @@ services:
     networks:
       - analyzer-net
 
+  # Neo4j 그래프 데이터베이스 (v2)
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: sesami-neo4j
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc","graph-data-science"]
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - analyzer-net
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER} -p ${NEO4J_PASSWORD} 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # OpenSearch 벡터 스토어 (v2)
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: sesami-opensearch
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
+      - DISABLE_SECURITY_PLUGIN=false
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "${OPENSEARCH_PORT}:9200"
+      - "${OPENSEARCH_PERF_PORT}:9600"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - analyzer-net
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k -u ${OPENSEARCH_USER}:${OPENSEARCH_PASSWORD} https://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 # 영속성 볼륨
 volumes:
   postgres_data:
+    driver: local
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  opensearch_data:
     driver: local
