@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 
 from common.database import get_db
 from common.exceptions import UnauthorizedException
+from common.graph_service import IGraphService, LocalGraphService
+from common.vector_service import IVectorService, LocalVectorService
+from config import settings
 
 # OAuth2 Bearer 스킴
 security = HTTPBearer()
@@ -86,3 +89,68 @@ def require_admin(current_user=Depends(get_current_user)):
     #         detail="Admin access required"
     #     )
     pass
+
+
+# Graph Service 싱글톤 인스턴스
+_graph_service: IGraphService = None
+
+
+def get_graph_service() -> IGraphService:
+    """환경에 따라 적절한 GraphService 반환
+
+    로컬 환경: LocalGraphService (Neo4j Community)
+    AWS 환경: AwsGraphService (Neo4j AuraDB 또는 Neptune) - 추후 구현
+
+    Returns:
+        IGraphService: 그래프 데이터베이스 서비스 인스턴스
+    """
+    global _graph_service
+
+    if _graph_service is None:
+        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+            # TODO: AWS 환경 구현 (Phase 3)
+            # from common.graph_service.aws_service import AwsGraphService
+            # _graph_service = AwsGraphService(...)
+            raise NotImplementedError("AWS GraphService is not implemented yet")
+        else:
+            # 로컬 환경: Neo4j Community
+            _graph_service = LocalGraphService(
+                uri=settings.NEO4J_URI,
+                user=settings.NEO4J_USER,
+                password=settings.NEO4J_PASSWORD
+            )
+
+    return _graph_service
+
+
+# Vector Service 싱글톤 인스턴스
+_vector_service: IVectorService = None
+
+
+def get_vector_service() -> IVectorService:
+    """환경에 따라 적절한 VectorService 반환
+
+    로컬 환경: LocalVectorService (OpenSearch)
+    AWS 환경: AwsVectorService (OpenSearch Serverless) - 추후 구현
+
+    Returns:
+        IVectorService: 벡터 데이터베이스 서비스 인스턴스
+    """
+    global _vector_service
+
+    if _vector_service is None:
+        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+            # TODO: AWS 환경 구현 (Phase 3)
+            # from common.vector_service.aws_service import AwsVectorService
+            # _vector_service = AwsVectorService(...)
+            raise NotImplementedError("AWS VectorService is not implemented yet")
+        else:
+            # 로컬 환경: OpenSearch
+            _vector_service = LocalVectorService(
+                endpoint=settings.OPENSEARCH_ENDPOINT,
+                user=settings.OPENSEARCH_USER,
+                password=settings.OPENSEARCH_PASSWORD,
+                default_index=settings.OPENSEARCH_INDEX_NAME
+            )
+
+    return _vector_service
