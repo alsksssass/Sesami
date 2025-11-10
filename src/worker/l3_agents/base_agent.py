@@ -3,12 +3,18 @@ L3-Agents Base Interface
 
 모든 L3 LLM 에이전트의 공통 인터페이스를 정의합니다.
 PDD v4.0의 "고비용 에이전트" 계층입니다.
+
+PDD v4.0 업데이트:
+- 환경변수 기반 자동 LLM provider 선택
+- config.py 통합
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 import time
+import json
 
 from shared.schemas.event_envelope import L3AgentOutput
+from config import LLMConfig
 
 
 class IL3Agent(ABC):
@@ -163,7 +169,7 @@ class IL3Agent(ABC):
 
     def invoke_llm(self, prompt: str, system_prompt: Optional[str] = None) -> Dict[str, Any]:
         """
-        LLM 호출 (Bedrock Claude)
+        LLM 호출 (환경변수 기반 자동 provider 선택)
 
         Args:
             prompt: 사용자 프롬프트
@@ -179,18 +185,56 @@ class IL3Agent(ABC):
         if not self.llm_client:
             raise AgentExecutionError("LLM client가 주입되지 않음")
 
-        try:
-            # Bedrock Claude 호출 (의사코드 - 실제 구현 필요)
-            response = self.llm_client.invoke_model(
-                prompt=prompt,
-                system_prompt=system_prompt
-            )
+        # 환경변수 기반 LLM provider 선택 (PDD v4.0)
+        config = LLMConfig.get_provider()
 
-            return {
-                "content": response.get("content", ""),
-                "tokens_used": response.get("usage", {}).get("total_tokens", 0),
-                "model": self.get_llm_model()
-            }
+        try:
+            if config['provider'] == 'bedrock':
+                # AWS Bedrock Claude 호출
+                response = self.llm_client.invoke_model(
+                    modelId=config['model_id'],
+                    body=json.dumps({
+                        "anthropic_version": "bedrock-2023-05-31",
+                        "max_tokens": config['max_tokens'],
+                        "temperature": config['temperature'],
+                        "system": system_prompt or "You are a helpful code analysis assistant.",
+                        "messages": [
+                            {"role": "user", "content": prompt}
+                        ]
+                    })
+                )
+
+                response_body = json.loads(response['body'].read())
+
+                return {
+                    "content": response_body['content'][0]['text'],
+                    "tokens_used": response_body['usage']['input_tokens'] + response_body['usage']['output_tokens'],
+                    "model": config['model_id']
+                }
+
+            elif config['provider'] == 'openai':
+                # OpenAI Fallback 호출
+                import openai
+                openai.api_key = config.get('api_key')
+
+                response = openai.ChatCompletion.create(
+                    model=config['model'],
+                    max_tokens=config['max_tokens'],
+                    temperature=config['temperature'],
+                    messages=[
+                        {"role": "system", "content": system_prompt or "You are a helpful code analysis assistant."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+
+                return {
+                    "content": response.choices[0].message.content,
+                    "tokens_used": response.usage.total_tokens,
+                    "model": config['model']
+                }
+
+            else:
+                raise AgentExecutionError(f"Unknown LLM provider: {config['provider']}")
 
         except Exception as e:
             raise AgentExecutionError(f"LLM 호출 실패: {e}")

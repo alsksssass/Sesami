@@ -9,6 +9,10 @@ Features:
 - 임베딩 생성 (Bedrock Titan, OpenAI)
 - OpenSearch k-NN 인덱싱
 - S3 기반 임베딩 캐싱
+
+PDD v4.0 업데이트:
+- 환경변수 기반 자동 provider 선택
+- config.py 통합
 """
 import os
 import json
@@ -17,6 +21,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 import numpy as np
+from config import EmbeddingConfig
 try:
     import tiktoken
     TIKTOKEN_AVAILABLE = True
@@ -53,9 +58,9 @@ class SemanticSearch:
         opensearch_endpoint: str,
         opensearch_user: str,
         opensearch_password: str,
-        embedding_provider: str = "bedrock",  # "bedrock" or "openai"
-        embedding_model: str = "amazon.titan-embed-text-v1",
-        aws_region: str = "us-east-1",
+        embedding_provider: Optional[str] = None,  # None = 환경변수 기반 자동 선택
+        embedding_model: Optional[str] = None,
+        aws_region: Optional[str] = None,
         openai_api_key: Optional[str] = None,
         s3_cache_bucket: Optional[str] = None
     ):
@@ -64,14 +69,27 @@ class SemanticSearch:
             opensearch_endpoint: OpenSearch 엔드포인트
             opensearch_user: OpenSearch 사용자명
             opensearch_password: OpenSearch 비밀번호
-            embedding_provider: "bedrock" 또는 "openai"
-            embedding_model: 모델 ID
-            aws_region: AWS 리전
-            openai_api_key: OpenAI API 키 (provider="openai" 시 필수)
+            embedding_provider: "bedrock" 또는 "openai" (None이면 환경변수 USE_BEDROCK 기반 자동 선택)
+            embedding_model: 모델 ID (None이면 환경변수 기반 자동 선택)
+            aws_region: AWS 리전 (None이면 환경변수 기반 자동 선택)
+            openai_api_key: OpenAI API 키 (provider="openai" 시 필수, None이면 환경변수 사용)
             s3_cache_bucket: S3 캐시 버킷 (선택사항)
         """
         if not TIKTOKEN_AVAILABLE:
             raise RuntimeError("tiktoken not installed. Install with: pip install tiktoken")
+
+        # 환경변수 기반 자동 설정 (PDD v4.0)
+        if embedding_provider is None:
+            config = EmbeddingConfig.get_provider()
+            embedding_provider = config['provider']
+
+            if embedding_provider == 'bedrock':
+                embedding_model = embedding_model or config['model_id']
+                aws_region = aws_region or config['region']
+                s3_cache_bucket = s3_cache_bucket or config.get('s3_cache_bucket')
+            else:  # openai
+                openai_api_key = openai_api_key or config.get('api_key')
+                embedding_model = embedding_model or config['model']
 
         # OpenSearch 클라이언트
         self.opensearch = OpenSearch(

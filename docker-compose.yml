@@ -11,8 +11,6 @@
 # AWS 환경에서는 Step Functions + AWS Batch로 대체됩니다.
 # ====================================================================
 
-version: '3.8'
-
 networks:
   analyzer-net:
     driver: bridge
@@ -21,28 +19,6 @@ networks:
 # 서비스 정의
 # ====================================================================
 services:
-  # ==================================================================
-  # L0: Frontend (React)
-  # ==================================================================
-  frontend:
-    build:
-      context: .
-      dockerfile: ./docker/frontend/Dockerfile
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-    volumes:
-      - ./src/frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_BACKEND_URL=${BACKEND_URL}
-      - VITE_GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-    env_file:
-      - .env
-    networks:
-      - analyzer-net
-    depends_on:
-      - backend
-
   # ==================================================================
   # L1: Backend API + Main Orchestrator (FastAPI)
   # ==================================================================
@@ -55,7 +31,7 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./src/backend:/app
-      - ./src/shared:/shared  # Event Envelope 스키마 공유
+      - ./src/shared:/app/shared  # Event Envelope 스키마 공유
       - efs_mock:/mnt/efs  # L2 결과 저장용 (AWS EFS 시뮬레이션)
     environment:
       - DATABASE_URL=${DATABASE_URL}
@@ -69,6 +45,7 @@ services:
       - OPENSEARCH_USER=${OPENSEARCH_USER}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
       - EFS_MOUNT_PATH=/mnt/efs
+      - PYTHONPATH=/app
     env_file:
       - .env
     networks:
@@ -105,7 +82,9 @@ services:
     command: celery -A celery_app worker --loglevel=info --concurrency=4 -Q l2_orchestrator
     volumes:
       - ./src/worker:/app
-      - ./src/shared:/shared  # Event Envelope 스키마 공유
+      - ./src/shared:/app/shared
+      - ./src/backend/common:/app/common  # Backend common 모듈 접근
+      - ./src/backend/config.py:/app/backend_config.py  # Backend config.py 접근
       - efs_mock:/mnt/efs  # L2 Reducer가 요약본 저장
     working_dir: /app
     environment:
@@ -119,6 +98,7 @@ services:
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
       - EFS_MOUNT_PATH=/mnt/efs
       - WORKER_TYPE=L2_ORCHESTRATOR
+      - PYTHONPATH=/app
     env_file:
       - .env
     networks:
@@ -133,7 +113,7 @@ services:
       opensearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$HOSTNAME || exit 1"]
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping || exit 1"] 
       interval: 30s
       timeout: 10s
       retries: 3
@@ -162,7 +142,9 @@ services:
     command: celery -A celery_app worker --loglevel=info --concurrency=10 -Q l3_tools
     volumes:
       - ./src/worker:/app
-      - ./src/shared:/shared  # Event Envelope 스키마 공유
+      - ./src/shared:/app/shared  # Event Envelope 스키마 공유
+      - ./src/backend/common:/app/common  # Backend common 모듈 접근
+      - ./src/backend/config.py:/app/backend_config.py  # Backend config.py 접근
       - efs_mock:/mnt/efs  # L3 결과 저장
     working_dir: /app
     environment:
@@ -174,6 +156,7 @@ services:
       - SONAR_HOST_URL=${SONAR_HOST_URL:-http://sonarqube:9000}
       - SEMGREP_RULES=p/security-audit,p/secrets
       - TRUFFLEHOG_VERIFY=true
+      - PYTHONPATH=/app
     env_file:
       - .env
     networks:
@@ -186,7 +169,7 @@ services:
           cpus: '2'  # CPU 집약적
           memory: 2G
     healthcheck:
-      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$HOSTNAME || exit 1"]
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -210,7 +193,9 @@ services:
     command: celery -A celery_app worker --loglevel=info --concurrency=2 -Q l3_builders
     volumes:
       - ./src/worker:/app
-      - ./src/shared:/shared  # Event Envelope 스키마 공유
+      - ./src/shared:/app/shared  # Event Envelope 스키마 공유
+      - ./src/backend/common:/app/common  # Backend common 모듈 접근
+      - ./src/backend/config.py:/app/backend_config.py  # Backend config.py 접근
       - efs_mock:/mnt/efs  # 저장소 클론 + JSONL 스테이징
     working_dir: /app
     environment:
@@ -223,9 +208,14 @@ services:
       - OPENSEARCH_USER=${OPENSEARCH_USER}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
       - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - USE_BEDROCK=${USE_BEDROCK}
+      - BEDROCK_EMBEDDING_MODEL_ID=${BEDROCK_EMBEDDING_MODEL_ID}
       - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-amazon.titan-embed-text-v1}
       - EFS_MOUNT_PATH=/mnt/efs
       - WORKER_TYPE=L3_BUILDERS
+      - PYTHONPATH=/app
     env_file:
       - .env
     networks:
@@ -240,7 +230,7 @@ services:
           cpus: '4'  # 파싱 + 임베딩 생성
           memory: 8G
     healthcheck:
-      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$HOSTNAME || exit 1"]
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -265,7 +255,9 @@ services:
     command: celery -A celery_app worker --loglevel=info --concurrency=2 -Q l3_agents
     volumes:
       - ./src/worker:/app
-      - ./src/shared:/shared  # Event Envelope 스키마 공유
+      - ./src/shared:/app/shared  # Event Envelope 스키마 공유
+      - ./src/backend/common:/app/common  # Backend common 모듈 접근
+      - ./src/backend/config.py:/app/backend_config.py  # Backend config.py 접근
       - efs_mock:/mnt/efs  # L3 결과 읽기/쓰기
     working_dir: /app
     environment:
@@ -278,11 +270,16 @@ services:
       - OPENSEARCH_USER=${OPENSEARCH_USER}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
       - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - USE_BEDROCK=${USE_BEDROCK}
+      - BEDROCK_LLM_MODEL_ID=${BEDROCK_LLM_MODEL_ID}
       - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-anthropic.claude-3-5-sonnet-20241022-v2:0}
       - EFS_MOUNT_PATH=/mnt/efs
       - WORKER_TYPE=L3_AGENTS
-      - LLM_MAX_TOKENS=4096
-      - LLM_TEMPERATURE=0.0
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE}
+      - PYTHONPATH=/app
     env_file:
       - .env
     networks:
@@ -297,7 +294,7 @@ services:
           cpus: '2'  # LLM 호출 대기 시간 많음
           memory: 4G
     healthcheck:
-      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$HOSTNAME || exit 1"]
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

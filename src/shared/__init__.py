@@ -1,8 +1,11 @@
 """
-Shared 모듈
-Backend와 Worker 간 공통 모델 및 유틸리티
+Sesami Shared Module
+
+공유 스키마 및 유틸리티 모듈
+PDD v4.0 Event Envelope 시스템
 """
 
 from .models import Analysis, AnalysisStatus
 
 __all__ = ["Analysis", "AnalysisStatus"]
+__version__ = "4.0.0"

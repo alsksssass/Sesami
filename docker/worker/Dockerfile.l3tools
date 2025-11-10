@@ -34,11 +34,9 @@ COPY src/worker/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # L3-Tools 전용 의존성
+# 주의: requirements.txt에 이미 포함된 패키지는 제외
 RUN pip install --no-cache-dir \
-    pylint==3.0.3 \
-    semgrep==1.54.0 \
-    trufflehog==3.63.2-rc0 \
-    radon==6.0.1
+    semgrep==1.54.0
 
 # SonarQube Scanner 설치
 RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip && \
