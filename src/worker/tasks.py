@@ -5,52 +5,19 @@ import os
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Dict, Any
-from sqlalchemy import create_engine, Column, String, DateTime, Enum
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.ext.declarative import declarative_base
-import uuid
-import enum
 
 from celery_app import celery_app
 from analysis import GitAnalyzer
+
+# Shared 모듈에서 공통 모델 import
+from shared.models import Analysis, AnalysisStatus, utc_now
 
 # DB 설정 (Backend DB와 동일)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Backend models import (동일한 테이블 사용)
-Base = declarative_base()
-
-
-def utc_now():
-    """UTC aware datetime factory for SQLAlchemy default"""
-    return datetime.now(timezone.utc)
-
-
-class AnalysisStatus(str, enum.Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
-class Analysis(Base):
-    """Backend의 Analysis 모델과 동일"""
-    __tablename__ = "analyses"
-
-    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(PGUUID(as_uuid=True), nullable=False)
-    repo_url = Column(String, nullable=False)
-    target_user = Column(String, nullable=False)
-    branch = Column(String, default="main")
-    task_id = Column(String, nullable=True)
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PENDING)
-    results = Column(String, nullable=True)  # JSON 결과
-    error_message = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=utc_now)
-    completed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 @celery_app.task(name="analyze_repository", bind=True)

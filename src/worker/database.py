@@ -1,25 +1,9 @@
 """
-워커용 데이터베이스 모델
+워커용 데이터베이스 연결 설정
+
+Note: 모델은 shared.models에서 import하여 사용
+Backend와 동일한 테이블 구조 공유
 """
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
-import uuid
 
-Base = declarative_base()
-
-
-class AnalysisResult(Base):
-    """
-    분석 결과 저장 테이블
-    """
-    __tablename__ = 'analysis_results'
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    repo_url = Column(String, nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)  # 분석 요청한 사용자 UUID
-    analyzed_user = Column(String, nullable=False)  # 기여자 이메일
-    line_count = Column(Integer, default=0)  # 기여한 라인 수
-
-    def __repr__(self):
-        return f"<AnalysisResult(repo={self.repo_url}, user={self.analyzed_user}, lines={self.line_count})>"
+# 향후 Worker 전용 DB 설정이 필요할 경우 여기에 추가
+# 현재는 shared.models의 공통 모델 사용
