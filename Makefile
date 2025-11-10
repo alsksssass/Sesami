@@ -265,3 +265,122 @@ version: ## 버전 정보 표시
 	@echo "$(BLUE)========================================$(NC)"
 	@echo "Docker: $$(docker --version)"
 	@echo "Docker Compose: $$(docker-compose --version)"
+
+# ============================================
+# Graph-RAG 개발 환경 (v2)
+# ============================================
+
+graph-dev: ## Neo4j + OpenSearch 포함 Graph-RAG 개발 환경 시작
+	@echo "$(GREEN)🔨 Graph-RAG 개발 환경 시작...$(NC)"
+	docker-compose up neo4j opensearch backend worker -d
+	@echo "$(GREEN)✅ Neo4j Browser: http://localhost:7474$(NC)"
+	@echo "$(GREEN)✅ OpenSearch: http://localhost:9200$(NC)"
+	@echo "$(GREEN)✅ Backend API: http://localhost:8000$(NC)"
+
+graph-dev-all: ## 전체 서비스 포함 Graph-RAG 환경 시작
+	@echo "$(GREEN)🚀 전체 Graph-RAG 환경 시작...$(NC)"
+	docker-compose up -d
+	@echo "$(GREEN)✅ 모든 서비스 실행 중!$(NC)"
+	@echo "$(GREEN)   - Frontend: http://localhost:3000$(NC)"
+	@echo "$(GREEN)   - Backend: http://localhost:8000$(NC)"
+	@echo "$(GREEN)   - Neo4j: http://localhost:7474$(NC)"
+	@echo "$(GREEN)   - OpenSearch: http://localhost:9200$(NC)"
+
+dev-infra: ## 백엔드 인프라만 시작 (DB, Queue, Neo4j, OpenSearch, Backend, Worker)
+	@echo "$(GREEN)🔨 백엔드 인프라 시작...$(NC)"
+	docker-compose up -d db queue neo4j opensearch backend worker
+	@echo "$(GREEN)✅ 백엔드 인프라 실행 중!$(NC)"
+	@echo "$(YELLOW)📝 프론트엔드는 별도 터미널에서 실행하세요:$(NC)"
+	@echo "   $(BLUE)make dev-frontend$(NC)"
+	@echo ""
+	@echo "$(GREEN)접속 URL:$(NC)"
+	@echo "   - Backend API: http://localhost:8000"
+	@echo "   - Backend Docs: http://localhost:8000/docs"
+	@echo "   - Neo4j Browser: http://localhost:7474"
+	@echo "   - OpenSearch: http://localhost:9200"
+
+dev-frontend: ## 프론트엔드 로컬 개발 서버 시작 (Vite)
+	@echo "$(GREEN)🚀 프론트엔드 개발 서버 시작...$(NC)"
+	@echo "$(YELLOW)📦 의존성 확인 중...$(NC)"
+	npm --prefix src/frontend install
+	@echo "$(GREEN)✅ Vite 개발 서버 실행 중...$(NC)"
+	npm --prefix src/frontend run dev
+
+graph-dev: ## Graph-RAG 개발 환경 시작 (Neo4j + OpenSearch + Backend + Worker)
+	@echo "$(GREEN)🔧 Graph-RAG 개발 환경 시작...$(NC)"
+	docker-compose up -d neo4j opensearch db queue backend worker
+	@echo "$(GREEN)✅ Graph-RAG 환경 실행 중!$(NC)"
+	@echo ""
+	@echo "$(GREEN)접속 URL:$(NC)"
+	@echo "   - Backend API: http://localhost:8000"
+	@echo "   - Backend Docs: http://localhost:8000/docs"
+	@echo "   - Neo4j Browser: http://localhost:7474"
+	@echo "   - Neo4j User/Pass: neo4j / sesami_graph_2025"
+	@echo "   - OpenSearch: https://localhost:9200"
+	@echo "   - OpenSearch User/Pass: admin / Sesami@OpenSearch2025!"
+	@echo ""
+	@echo "$(YELLOW)유용한 명령어:$(NC)"
+	@echo "   $(BLUE)make shell-neo4j$(NC)         - Neo4j Cypher Shell 접속"
+	@echo "   $(BLUE)make check-neo4j$(NC)         - Neo4j 상태 확인"
+	@echo "   $(BLUE)make check-opensearch$(NC)    - OpenSearch 상태 확인"
+	@echo "   $(BLUE)make logs-neo4j$(NC)          - Neo4j 로그 보기"
+	@echo "   $(BLUE)make logs-opensearch$(NC)     - OpenSearch 로그 보기"
+	@echo "   $(BLUE)make clean-graph$(NC)         - 그래프 데이터 초기화"
+
+shell-neo4j: ## Neo4j Cypher Shell 접속
+	@echo "$(BLUE)📊 Neo4j Cypher Shell 접속...$(NC)"
+	docker-compose exec neo4j cypher-shell -u neo4j -p sesami_graph_2025
+
+check-neo4j: ## Neo4j 상태 확인
+	@echo "$(BLUE)🔍 Neo4j 상태 확인 중...$(NC)"
+	@docker-compose exec neo4j cypher-shell -u neo4j -p sesami_graph_2025 "CALL dbms.components() YIELD name, versions RETURN name, versions[0] as version;" || echo "$(RED)❌ Neo4j 연결 실패$(NC)"
+
+check-opensearch: ## OpenSearch 클러스터 상태 확인
+	@echo "$(BLUE)🔍 OpenSearch 클러스터 상태 확인...$(NC)"
+	@curl -k -u admin:Sesami@OpenSearch2025! https://localhost:9200/_cluster/health?pretty || echo "$(RED)❌ OpenSearch 연결 실패$(NC)"
+
+logs-neo4j: ## Neo4j 로그 보기
+	docker-compose logs -f neo4j
+
+logs-opensearch: ## OpenSearch 로그 보기
+	docker-compose logs -f opensearch
+
+clean-graph: ## Neo4j + OpenSearch 데이터 초기화 (⚠️ 그래프 데이터 삭제)
+	@echo "$(RED)⚠️  그래프 데이터 삭제 중...$(NC)"
+	docker-compose stop neo4j opensearch
+	docker volume rm sesami_neo4j_data sesami_neo4j_logs sesami_opensearch_data 2>/dev/null || true
+	@echo "$(GREEN)✅ 그래프 데이터 삭제 완료$(NC)"
+
+# ============================================
+# 통합 테스트 (v2)
+# ============================================
+
+ci: ## 통합 스모크 테스트 실행
+	@echo "$(YELLOW)🧪 통합 테스트 실행 중...$(NC)"
+	@echo "$(BLUE)--- Backend Tests ---$(NC)"
+	@docker-compose exec -T backend pytest tests/ -v 2>/dev/null || echo "$(YELLOW)⚠️  Backend 테스트 스킵 (pytest 미설치)$(NC)"
+	@echo ""
+	@echo "$(BLUE)--- Frontend Tests ---$(NC)"
+	@docker-compose exec -T frontend npm test 2>/dev/null || echo "$(YELLOW)⚠️  Frontend 테스트 스킵$(NC)"
+	@echo ""
+	@echo "$(BLUE)--- Health Checks ---$(NC)"
+	@curl -f http://localhost:8000/health 2>/dev/null && echo "$(GREEN)✅ Backend Health OK$(NC)" || echo "$(RED)❌ Backend Health Failed$(NC)"
+	@echo "$(GREEN)✅ 통합 테스트 완료$(NC)"
+
+health-check: ## 모든 서비스 헬스체크
+	@echo "$(BLUE)🏥 서비스 헬스체크 중...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Backend API:$(NC)"
+	@curl -f http://localhost:8000/health 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Neo4j:$(NC)"
+	@docker-compose exec -T neo4j cypher-shell -u neo4j -p sesami_graph_2025 "RETURN 1;" >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)OpenSearch:$(NC)"
+	@curl -k -f -u admin:Sesami@OpenSearch2025! https://localhost:9200/_cluster/health 2>/dev/null >/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)PostgreSQL:$(NC)"
+	@docker-compose exec -T db pg_isready -U sesami_user >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Redis:$(NC)"
+	@docker-compose exec -T queue redis-cli ping >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"

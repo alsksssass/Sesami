@@ -12,6 +12,8 @@ RUN apk add --no-cache \
 
 # requirements.txt 복사 및 의존성 설치
 COPY ../../src/backend/requirements.txt .
+COPY ../../src/shared /shared
+ENV PYTHONPATH=/app:/shared
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 소스 코드는 볼륨 마운트로 처리
