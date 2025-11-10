@@ -6,6 +6,7 @@ from common.database import get_db
 from common.exceptions import UnauthorizedException
 from common.graph_service import IGraphService, LocalGraphService
 from common.vector_service import IVectorService, LocalVectorService
+from common.task_service import ITaskService, LocalTaskService
 from config import settings
 
 # OAuth2 Bearer 스킴
@@ -154,3 +155,33 @@ def get_vector_service() -> IVectorService:
             )
 
     return _vector_service
+
+
+# Task Service 싱글톤 인스턴스
+_task_service: ITaskService = None
+
+
+def get_task_service() -> ITaskService:
+    """환경에 따라 적절한 TaskService 반환
+
+    로컬 환경: LocalTaskService (Celery + Redis)
+    AWS 환경: AwsBatchTaskService (Step Functions + SQS + Batch)
+
+    Returns:
+        ITaskService: 작업 큐 서비스 인스턴스
+    """
+    global _task_service
+
+    if _task_service is None:
+        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+            # AWS 환경: Step Functions + Batch
+            from common.task_service.aws_batch_service import AwsBatchTaskService
+            _task_service = AwsBatchTaskService()
+        else:
+            # 로컬 환경: Celery + Redis
+            _task_service = LocalTaskService(
+                broker_url=settings.CELERY_BROKER_URL,
+                result_backend=settings.CELERY_RESULT_BACKEND
+            )
+
+    return _task_service
