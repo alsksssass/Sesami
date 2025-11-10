@@ -306,6 +306,27 @@ dev-frontend: ## 프론트엔드 로컬 개발 서버 시작 (Vite)
 	@echo "$(GREEN)✅ Vite 개발 서버 실행 중...$(NC)"
 	npm --prefix src/frontend run dev
 
+graph-dev: ## Graph-RAG 개발 환경 시작 (Neo4j + OpenSearch + Backend + Worker)
+	@echo "$(GREEN)🔧 Graph-RAG 개발 환경 시작...$(NC)"
+	docker-compose up -d neo4j opensearch db queue backend worker
+	@echo "$(GREEN)✅ Graph-RAG 환경 실행 중!$(NC)"
+	@echo ""
+	@echo "$(GREEN)접속 URL:$(NC)"
+	@echo "   - Backend API: http://localhost:8000"
+	@echo "   - Backend Docs: http://localhost:8000/docs"
+	@echo "   - Neo4j Browser: http://localhost:7474"
+	@echo "   - Neo4j User/Pass: neo4j / sesami_graph_2025"
+	@echo "   - OpenSearch: https://localhost:9200"
+	@echo "   - OpenSearch User/Pass: admin / Sesami@OpenSearch2025!"
+	@echo ""
+	@echo "$(YELLOW)유용한 명령어:$(NC)"
+	@echo "   $(BLUE)make shell-neo4j$(NC)         - Neo4j Cypher Shell 접속"
+	@echo "   $(BLUE)make check-neo4j$(NC)         - Neo4j 상태 확인"
+	@echo "   $(BLUE)make check-opensearch$(NC)    - OpenSearch 상태 확인"
+	@echo "   $(BLUE)make logs-neo4j$(NC)          - Neo4j 로그 보기"
+	@echo "   $(BLUE)make logs-opensearch$(NC)     - OpenSearch 로그 보기"
+	@echo "   $(BLUE)make clean-graph$(NC)         - 그래프 데이터 초기화"
+
 shell-neo4j: ## Neo4j Cypher Shell 접속
 	@echo "$(BLUE)📊 Neo4j Cypher Shell 접속...$(NC)"
 	docker-compose exec neo4j cypher-shell -u neo4j -p sesami_graph_2025

@@ -1,0 +1,64 @@
+# ====================================================================
+# L3-Tools Dockerfile
+# ====================================================================
+# 저비용 CPU 기반 분석 도구 컨테이너
+#
+# 포함 도구:
+#   - Pylint (Python 코드 품질)
+#   - SonarQube Scanner (코드 복잡도)
+#   - Semgrep (보안 패턴 매칭)
+#   - TruffleHog (시크릿 스캔)
+#   - DORA Calculator (변경 빈도 계산)
+#
+# 특징:
+#   - Graviton 호환 (ARM64)
+#   - 결정론적 (같은 입력 → 같은 출력)
+#   - Event Envelope 반환
+# ====================================================================
+
+ARG BUILDPLATFORM=linux/amd64
+FROM --platform=${BUILDPLATFORM} python:3.11-slim
+
+WORKDIR /app
+
+# 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 패키지 설치
+COPY src/worker/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# L3-Tools 전용 의존성
+RUN pip install --no-cache-dir \
+    pylint==3.0.3 \
+    semgrep==1.54.0 \
+    trufflehog==3.63.2-rc0 \
+    radon==6.0.1
+
+# SonarQube Scanner 설치
+RUN wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip && \
+    unzip sonar-scanner-cli-5.0.1.3006-linux.zip && \
+    mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner && \
+    rm sonar-scanner-cli-5.0.1.3006-linux.zip
+
+ENV PATH="/opt/sonar-scanner/bin:${PATH}"
+
+# 작업 디렉토리 복사
+COPY src/worker /app
+COPY src/shared /shared
+
+# Pylint 설정 파일
+RUN echo "[MASTER]" > /app/.pylintrc && \
+    echo "max-line-length=120" >> /app/.pylintrc && \
+    echo "disable=C0111,C0103,W0212" >> /app/.pylintrc
+
+# EFS 마운트 포인트 생성
+RUN mkdir -p /mnt/efs
+
+# Celery Worker 실행
+CMD ["celery", "-A", "celery_app", "worker", "--loglevel=info", "--concurrency=10", "-Q", "l3_tools"]
