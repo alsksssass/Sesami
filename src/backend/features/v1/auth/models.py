@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
 import uuid
@@ -18,6 +18,7 @@ class User(Base):
     github_id = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     nickname = Column(String, unique=True, index=True)
+    repo_count = Column("repository_request_count", Integer, default=0)
     email = Column(String, unique=True, index=True, nullable=True)
     avatar_url = Column(String, nullable=True)
     access_token = Column(String(500), nullable=True)  # Encrypted GitHub Access Token
