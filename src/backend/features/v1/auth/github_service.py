@@ -201,6 +201,15 @@ class GitHubOAuthService:
         return user
 
     def generate_random_nickname(self) -> str:
+        """
+        랜덤 nickname 자동 생성
+
+        Raises:
+            ValueError: 500번 내에 고유 닉네임을 생성하지 못했을 때
+
+        Returns:
+            str: 생성된 nickname (sesami-{[0-9a-zA-Z] * 6})
+        """
         alphabet = string.ascii_letters + string.digits
         for _ in range(500):
             postfix = "".join(secrets.choice(alphabet) for _ in range(6))
