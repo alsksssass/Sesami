@@ -17,6 +17,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     github_id = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
+    nickname = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True, nullable=True)
     avatar_url = Column(String, nullable=True)
     access_token = Column(String(500), nullable=True)  # Encrypted GitHub Access Token

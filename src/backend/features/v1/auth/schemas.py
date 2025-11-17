@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     id: UUID
     github_id: str
     username: str
+    nickname: str
     email: Optional[EmailStr] = None
     avatar_url: Optional[str] = None
     created_at: datetime
