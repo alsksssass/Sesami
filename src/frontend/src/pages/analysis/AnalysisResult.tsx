@@ -187,7 +187,7 @@ export default function AnalysisResult() {
             </button>
             <button
               onClick={() => navigate('/analysis/new')}
-              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-blue-600 hover:bg-blue-700"
             >
               New Analysis
             </button>

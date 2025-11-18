@@ -77,7 +77,7 @@ export default function AnalysisHistory() {
           <h2 className="text-3xl font-bold text-gray-900">Analysis History</h2>
           <button
             onClick={() => navigate('/analysis/new')}
-            className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-blue-600 hover:bg-blue-700"
           >
             New Analysis
           </button>
@@ -112,7 +112,7 @@ export default function AnalysisHistory() {
             </p>
             <button
               onClick={() => navigate('/analysis/new')}
-              className="inline-flex items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-blue-600 hover:bg-blue-700"
             >
               Start Your First Analysis
             </button>
