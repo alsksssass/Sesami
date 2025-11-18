@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
+import { X, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 const categories = [
   { id: undefined, label: "전체" },
@@ -32,6 +34,11 @@ export default function Home() {
   >(undefined);
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDeveloper, setSelectedDeveloper] = useState<string | null>(
+    null
+  );
+  const [analysisResult, setAnalysisResult] = useState<string>("");
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // API 호출
   const fetchDevelopers = async (
@@ -56,6 +63,27 @@ export default function Home() {
   useEffect(() => {
     fetchDevelopers(selectedCategory);
   }, [selectedCategory]);
+
+  // 개발자 클릭 시 분석 결과 조회
+  const handleDeveloperClick = async (nickname: string) => {
+    setSelectedDeveloper(nickname);
+    setAnalysisLoading(true);
+    try {
+      const data = await api.analysis.getPublicUserAnalysis(nickname);
+      setAnalysisResult(data.result);
+    } catch (error) {
+      console.error("분석 결과 조회 실패:", error);
+      setAnalysisResult("분석 결과를 불러올 수 없습니다.");
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  // 팝업 닫기
+  const closeModal = () => {
+    setSelectedDeveloper(null);
+    setAnalysisResult("");
+  };
 
   // 로딩 중
   if (isLoading) {
@@ -139,6 +167,7 @@ export default function Home() {
                   {developers.map((dev) => (
                     <tr
                       key={dev.nickname}
+                      onClick={() => handleDeveloperClick(dev.nickname)}
                       className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
                     >
                       <td className="px-6 py-5">
@@ -192,6 +221,48 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* 분석 결과 모달 */}
+        {selectedDeveloper && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={closeModal}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 모달 헤더 */}
+              <div className="border-b bg-linear-to-r from-indigo-50 to-purple-50 p-6 flex items-center justify-between">
+                <h3 className="text-2xl text-slate-900 font-bold">
+                  {selectedDeveloper} 분석 결과
+                </h3>
+                <button
+                  onClick={closeModal}
+                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-600" />
+                </button>
+              </div>
+
+              {/* 모달 내용 */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-88px)]">
+                {analysisLoading ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="w-12 h-12 animate-spin text-indigo-600 mx-auto" />
+                    <p className="mt-4 text-slate-600">
+                      분석 결과를 불러오는 중...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="markdown-content">
+                    <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
