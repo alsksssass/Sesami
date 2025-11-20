@@ -29,6 +29,7 @@ class RepositoryAnalysis(Base):
     status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PROCESSING)
     error_message = Column(String, nullable=True)
     
+    task_uuid = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
