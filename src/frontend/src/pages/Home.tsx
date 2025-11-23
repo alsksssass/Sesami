@@ -21,7 +21,6 @@ interface Developer {
   order: number;
   nickname: string;
   level: number;
-  exp: number;
   stack: string[];
   dev_type: string[];
 }
@@ -107,7 +106,7 @@ export default function Home() {
               GitHub Contribution Analyzer
             </h2>
             <p className="text-xl text-slate-600">
-              GitHub 저장소의 기여도를 분석하고 시각화합니다
+              GitHub 저장소의 코드를 분석하고 시각화합니다
             </p>
           </div>
         </div>
@@ -153,9 +152,6 @@ export default function Home() {
                       레벨
                     </th>
                     <th className="px-6 py-4 text-left text-slate-700 font-semibold">
-                      경험치
-                    </th>
-                    <th className="px-6 py-4 text-left text-slate-700 font-semibold">
                       분야
                     </th>
                     <th className="px-6 py-4 text-left text-slate-700 font-semibold">
@@ -192,11 +188,6 @@ export default function Home() {
                       <td className="px-6 py-5">
                         <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                           Lv.{dev.level}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                          {dev.exp.toLocaleString()} XP
                         </span>
                       </td>
                       <td className="px-6 py-5">

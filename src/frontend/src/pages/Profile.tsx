@@ -8,10 +8,21 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import ReactMarkdown from "react-markdown";
 
+interface RepositoryAnalysisResult {
+  markdown: string;
+  security_score: number;
+  stack: string[];
+  user: {
+    contribution: number;
+    language: Record<string, { level: number; exp: number }>;
+    role: Record<string, number>;
+  };
+}
+
 interface RepositoryAnalysis {
   name: string;
   url: string;
-  result?: string; // 마크다운 형태의 분석 결과
+  result?: RepositoryAnalysisResult; // 분석 결과 객체
   state: "progress" | "done" | "error";
   error_log?: string;
 }
@@ -207,7 +218,7 @@ export default function Profile() {
                     <div className="p-6 bg-white">
                       {repo.state === "done" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown>{repo.result}</ReactMarkdown>
+                          <ReactMarkdown>{repo.result.markdown}</ReactMarkdown>
                         </div>
                       ) : repo.state === "progress" ? (
                         <div className="text-center py-8">

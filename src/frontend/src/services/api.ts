@@ -107,8 +107,10 @@ export const api = {
      * 현재 사용자 정보 조회
      */
     getCurrentUser: async () => {
-      // 개발 모드에서는 Mock 데이터 반환
-      if (import.meta.env.DEV) {
+      // Mock 데이터 사용 여부 체크 (VITE_USE_MOCK=false면 실제 API 호출)
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 시뮬레이션
 
         return {
@@ -158,8 +160,10 @@ export const api = {
       page?: number;
       size?: number;
     }) => {
-      // 개발 모드에서는 Mock 데이터 반환
-      if (import.meta.env.DEV) {
+      // Mock 데이터 사용 여부 체크
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         await new Promise((resolve) => setTimeout(resolve, 500)); // 로딩 시뮬레이션
 
         const mockUsers = [
@@ -261,7 +265,9 @@ export const api = {
      * 레포지토리 목록 조회
      */
     getRepositories: () => {
-      if (import.meta.env.DEV) {
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         return Promise.resolve({
           repositories: [
             {
@@ -478,14 +484,17 @@ export const api = {
      * 본인 레포지토리 분석 조회
      */
     getMyRepositoryAnalysis: () => {
-      if (import.meta.env.DEV) {
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         return Promise.resolve({
           repositories: [
             {
               name: "sesami-frontend",
               url: "https://github.com/alsksssass/sesami-frontend",
               state: "done" as const,
-              result: `
+              result: {
+                markdown: `
 ## 📊 프로젝트 개요
 
 | 항목 | 수치 |
@@ -544,6 +553,17 @@ HTML        █░░░░░░░░░░░░░░░░░░░░░  
 
 프로젝트가 안정적으로 관리되고 있으며, 현대적인 기술 스택을 잘 활용하고 있습니다. 테스트 커버리지 개선을 통해 더욱 견고한 코드베이스를 구축할 수 있습니다.
 `,
+                security_score: 7.5,
+                stack: ["React", "TypeScript", "Vite", "Tailwind CSS"],
+                user: {
+                  contribution: 85.5,
+                  language: {
+                    typescript: { level: 5, exp: 120 },
+                    javascript: { level: 4, exp: 80 },
+                  },
+                  role: { frontend: 90, backend: 10 },
+                },
+              },
             },
             {
               name: "ai-model-trainer",
@@ -564,9 +584,18 @@ HTML        █░░░░░░░░░░░░░░░░░░░░░  
         repositories: Array<{
           name: string;
           url: string;
-          result?: string; // state가 done일 때 분석 결과 (마크다운)
+          result?: {
+            markdown: string;
+            security_score: number;
+            stack: string[];
+            user: {
+              contribution: number;
+              language: Record<string, { level: number; exp: number }>;
+              role: Record<string, number>;
+            };
+          };
           state: "progress" | "done" | "error";
-          error_log?: string; // state가 error일 때 에러 내용
+          error_log?: string;
         }>;
       }>("/api/v1/repo/analyze");
     },
@@ -575,7 +604,9 @@ HTML        █░░░░░░░░░░░░░░░░░░░░░  
      * 사용자 종합 분석 조회
      */
     getUserAnalysis: () => {
-      if (import.meta.env.DEV) {
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         return Promise.resolve({
           result: `# 🎯 alsksssass 개발자 종합 분석 보고서
 
@@ -697,7 +728,9 @@ Data         ████████░░░░░░░░░░░░  40%
      * @param nickname - 조회할 사용자의 닉네임 (URL 인코딩 필요)
      */
     getPublicUserAnalysis: (nickname: string) => {
-      if (import.meta.env.DEV) {
+      const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+      if (useMock) {
         return Promise.resolve({
           result: `# 🎯 ${nickname} 개발자 종합 분석 보고서
 
