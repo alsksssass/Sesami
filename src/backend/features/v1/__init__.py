@@ -8,5 +8,7 @@ API v1 Features
 from . import auth
 from . import github_analysis
 from . import webhooks
+from . import repo
+from . import user
 
-__all__ = ['auth', 'github_analysis', 'webhooks']
+__all__ = ['auth', 'github_analysis', 'webhooks', 'repo', 'user']

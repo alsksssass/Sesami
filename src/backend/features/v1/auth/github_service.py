@@ -1,7 +1,10 @@
 """
 GitHub OAuth 인증 서비스
 """
+
 import httpx
+import secrets
+import string
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -164,6 +167,7 @@ class GitHubOAuthService:
                 email=github_data.get("email"),
                 avatar_url=github_data.get("avatar_url"),
                 access_token=encrypted_token,
+                nickname=self.generate_random_nickname(),
             )
             self.db.add(user)
 
@@ -195,3 +199,25 @@ class GitHubOAuthService:
         user = self.create_or_update_user(github_user_info, access_token)
 
         return user
+
+    def generate_random_nickname(self) -> str:
+        """
+        랜덤 nickname 자동 생성
+
+        Raises:
+            ValueError: 500번 내에 고유 닉네임을 생성하지 못했을 때
+
+        Returns:
+            str: 생성된 nickname (sesami-{[0-9a-zA-Z] * 6})
+        """
+        alphabet = string.ascii_letters + string.digits
+        for _ in range(500):
+            postfix = "".join(secrets.choice(alphabet) for _ in range(6))
+            nickname = f"sesami-{postfix}"
+            exists = (
+                self.db.query(User.id).filter(User.nickname == nickname).first()
+                is not None
+            )
+            if not exists:
+                return nickname
+        raise ValueError("Could not generate unique nickname")
