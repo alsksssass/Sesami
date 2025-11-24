@@ -63,7 +63,7 @@ export default function AnalysisProgressBadge({
         <span className="text-sm text-green-700 font-medium">Completed</span>
         <button
           onClick={handleViewResults}
-          className="ml-2 px-2 py-0.5 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+          className="ml-2 px-2 py-0.5 text-xs bg-green-600 text-black rounded hover:bg-green-700"
         >
           View Results
         </button>

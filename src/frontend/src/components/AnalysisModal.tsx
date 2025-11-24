@@ -218,7 +218,7 @@ export default function AnalysisModal({
               <button
                 onClick={handleStartAnalysis}
                 disabled={loading || !targetUser.trim()}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2 px-4 bg-blue-600 text-black rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Starting...' : 'Start Analysis'}
               </button>
@@ -266,7 +266,7 @@ export default function AnalysisModal({
               <div className="space-y-3">
                 <button
                   onClick={handleViewResults}
-                  className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="w-full py-2 px-4 bg-blue-600 text-black rounded-md hover:bg-blue-700"
                 >
                   View Results
                 </button>
