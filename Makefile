@@ -232,7 +232,7 @@ status: ## 서비스 상태 확인
 	@echo "$(BLUE)========================================$(NC)"
 	@docker-compose ps
 	@echo ""
-	@echo "$(GREEN)📊 Frontend:$(NC) http://localhost:3000"
+	@echo "$(GREEN)📊 Frontend:$(NC) http://localhost:5173"
 	@echo "$(GREEN)📊 Backend:$(NC)  http://localhost:8000"
 	@echo "$(GREEN)📊 API Docs:$(NC) http://localhost:8000/docs"
 	@echo "$(GREEN)📊 Database:$(NC) localhost:5432"
@@ -281,7 +281,7 @@ graph-dev-all: ## 전체 서비스 포함 Graph-RAG 환경 시작
 	@echo "$(GREEN)🚀 전체 Graph-RAG 환경 시작...$(NC)"
 	docker-compose up -d
 	@echo "$(GREEN)✅ 모든 서비스 실행 중!$(NC)"
-	@echo "$(GREEN)   - Frontend: http://localhost:3000$(NC)"
+	@echo "$(GREEN)   - Frontend: http://localhost:5173$(NC)"
 	@echo "$(GREEN)   - Backend: http://localhost:8000$(NC)"
 	@echo "$(GREEN)   - Neo4j: http://localhost:7474$(NC)"
 	@echo "$(GREEN)   - OpenSearch: http://localhost:9200$(NC)"
@@ -369,6 +369,9 @@ ci: ## 통합 스모크 테스트 실행
 
 health-check: ## 모든 서비스 헬스체크
 	@echo "$(BLUE)🏥 서비스 헬스체크 중...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Frontend:$(NC)"
+	@curl -f http://localhost:5173 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Backend API:$(NC)"
 	@curl -f http://localhost:8000/health 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"

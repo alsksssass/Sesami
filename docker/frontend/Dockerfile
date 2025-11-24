@@ -2,8 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache curl
+
 # package.json과 package-lock.json 복사
-COPY ../../src/frontend/package*.json ./
+COPY src/frontend/package*.json ./
 
 # 의존성 설치
 RUN npm install
