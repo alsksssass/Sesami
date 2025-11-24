@@ -166,3 +166,13 @@ class GitHubAPIService:
             )
 
             return response.json()
+    
+    async def verify_github_token(self):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.GITHUB_API_BASE}/user",
+                headers=self._get_headers(),
+                timeout=10.0
+            )
+            if response.status_code != 200:
+                raise UnauthorizedException()

@@ -443,10 +443,10 @@ export const api = {
     /**
      * 선택된 레포지토리 분석 요청
      */
-    analyzeRepositories: (repoUrls: string[]) =>
+    analyzeRepositories: (repoInfos: Record<string, string>[]) =>
       request<void>("/api/v1/repo/analyze", {
         method: "POST",
-        body: JSON.stringify({ repo_urls: repoUrls }),
+        body: JSON.stringify({ repos: repoInfos }),
       }),
 
     /**

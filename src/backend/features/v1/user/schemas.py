@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from uuid import UUID
 
-from features.v1.repo.models import AnalysisStatus
+from features.v1.repo.models import AnalysisState
 
 
 class LanguageInfo(BaseModel):
@@ -33,6 +33,7 @@ class UserAnalysisResponse(BaseModel):
 
 class UserAnalysisMVPResponse(BaseModel):
     result: str # markdown 형식
+    status: AnalysisState
 
 
 class DevType(str, Enum):

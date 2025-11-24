@@ -2,15 +2,14 @@ from common.database import Base
 from sqlalchemy import Column, String, DateTime, JSON, UUID, ForeignKey, Enum
 import uuid
 import enum
-import datetime
-from datetime import timezone
+from datetime import timezone, datetime
 
 
-class AnalysisStatus(str, enum.Enum):
+class AnalysisState(str, enum.Enum):
     """분석 작업 상태"""
-    PROCESSING = "progress"
-    DONE = "done"
-    ERROR = "error"    
+    PROGRESS = "PROGRESS"
+    DONE = "DONE"
+    ERROR = "ERROR"    
 
 
 def utc_now():
@@ -23,10 +22,11 @@ class RepositoryAnalysis(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    repository_name = Column(String)
     repository_url = Column(String, index=True)
     result = Column(JSON, nullable=True) # RepositoryAnalysisResult 형태의 JSON
 
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PROCESSING)
+    status = Column(Enum(AnalysisState), default=AnalysisState.PROGRESS)
     error_message = Column(String, nullable=True)
     
     task_uuid = Column(UUID(as_uuid=True), nullable=True)
@@ -43,7 +43,7 @@ class Analysis(Base):
     # target_user = Column(String, nullable=False) # 분석 대상 GitHub 사용자명 -> username
     result = Column(JSON, nullable=True) # UserAnalysisResult 형태의 JSON
 
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PROCESSING)
+    status = Column(Enum(AnalysisState), default=AnalysisState.PROGRESS)
     error_message = Column(String, nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=utc_now)
