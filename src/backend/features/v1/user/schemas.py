@@ -39,10 +39,14 @@ class UserAnalysisMVPResponse(BaseModel):
 class DevType(str, Enum):
     """개발 타입"""
     BACKEND = "backend"
-    FRONTEND = "frontend"
-    FULLSTACK = "fullstack"
-    AI = "ai"
-    DATA_SCIENCE = "data_science"
+    FRONTEND = "Frontend"
+    FULLSTACK = "Fullstack"
+    AI = "AI/ML"
+    DATA = "Data"
+    QA = "QA"
+    DEVOPS = "DevOps"
+    MOBILE = "Mobile"
+    SECURITY = "Security"
 
 
 class UserAnalysisSearchRequest(BaseModel):
