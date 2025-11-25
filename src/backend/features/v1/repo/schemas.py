@@ -50,7 +50,7 @@ class RepositoryListResponse(BaseModel):
 # Analysis Schemas
 class AnalysisRequest(BaseModel):
     """분석 요청"""
-    repo_urls: List[str] # 1개 이상, 최대 3개
+    repos: List[Dict[str, str]] # name - url 쌍
 
 
 class LanguageStackInfo(BaseModel):
@@ -76,15 +76,26 @@ class RepositoryAnalysisResult(BaseModel):
     user: RepositoryUserAnalysisResult
 
 
-class RepositoryAnalysis(BaseModel):
+class RepositoryAnalysisResponse(BaseModel):
     """레포지토리 분석 상태"""
     name: str
     url: str
     result: Optional[RepositoryAnalysisResult] = None
-    state: AnalysisStatus = AnalysisStatus.PROCESSING
+    state: AnalysisStatus
+    error_log: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class RepositoryAnalysisMVPResponse(BaseModel):
+    name: str
+    url: str
+    result: Optional[dict[str, Any]] = None
+    state: AnalysisStatus
     error_log: Optional[str] = None
 
 
 class AnalysisResultResponse(BaseModel):
     """레포지토리 분석 결과 리스트 응답"""
-    repositories: List[RepositoryAnalysis]
+    repositories: List[RepositoryAnalysisMVPResponse]

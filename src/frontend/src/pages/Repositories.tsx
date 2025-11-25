@@ -94,7 +94,7 @@ const Repositories: React.FC = () => {
       // 선택된 레포지토리의 URL 가져오기
       const selectedRepoUrls = repos
         .filter((repo) => selectedRepos.includes(repo.id))
-        .map((repo) => repo.html_url);
+        .map((repo) => ({[repo.full_name]: repo.html_url}));
 
       if (selectedRepoUrls.length === 0) {
         return;

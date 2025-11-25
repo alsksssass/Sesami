@@ -12,7 +12,7 @@ from celery_app import celery_app
 from analysis import GitAnalyzer
 
 # Shared 모듈에서 공통 모델 import
-from shared.models import Analysis, AnalysisStatus, utc_now
+from shared.models import Analysis, AnalysisState, utc_now
 
 # DB 설정 (Backend DB와 동일)
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -51,7 +51,7 @@ def analyze_repository(
         if not analysis:
             raise ValueError(f"Analysis {analysis_id} not found in database")
 
-        analysis.status = AnalysisStatus.PROCESSING
+        analysis.status = AnalysisState.PROCESSING
         db.commit()
 
         self.update_state(state='PROGRESS', meta={'status': 'Cloning repository...'})
@@ -65,7 +65,7 @@ def analyze_repository(
         stats = analyzer.analyze_contributions(repo_path, target_user)
 
         # 3. 분석 결과를 DB에 저장
-        analysis.status = AnalysisStatus.COMPLETED
+        analysis.status = AnalysisState.COMPLETED
         analysis.results = {
             "total_lines": stats.total_lines,
             "added_lines": stats.added_lines,
@@ -92,7 +92,7 @@ def analyze_repository(
             try:
                 analysis = db.query(Analysis).filter(Analysis.id == UUID(analysis_id)).first()
                 if analysis:
-                    analysis.status = AnalysisStatus.FAILED
+                    analysis.status = AnalysisState.FAILED
                     analysis.error_message = str(e)
                     analysis.completed_at = utc_now()
                     db.commit()

@@ -32,16 +32,21 @@ class UserAnalysisResponse(BaseModel):
 
 
 class UserAnalysisMVPResponse(BaseModel):
-    result: str # markdown 형식
+    result: str|None = None # markdown 형식
+    status: AnalysisStatus
 
 
 class DevType(str, Enum):
     """개발 타입"""
     BACKEND = "backend"
-    FRONTEND = "frontend"
-    FULLSTACK = "fullstack"
-    AI = "ai"
-    DATA_SCIENCE = "data_science"
+    FRONTEND = "Frontend"
+    FULLSTACK = "Fullstack"
+    AI = "AI/ML"
+    DATA = "Data"
+    QA = "QA"
+    DEVOPS = "DevOps"
+    MOBILE = "Mobile"
+    SECURITY = "Security"
 
 
 class UserAnalysisSearchRequest(BaseModel):

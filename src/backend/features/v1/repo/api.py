@@ -1,9 +1,11 @@
 from typing import List
-from common.exceptions import BadRequestException, UnauthorizedException
+import uuid
+from common.exceptions import BadRequestException, UnauthorizedException, NotFoundException
 from fastapi import Depends, Response, Query, status, Header
 from uuid import UUID
 from sqlalchemy.orm import Session
 from config import settings
+import json
 
 from common.router_registry import FeatureRouter
 from common.dependencies import get_current_user, get_db
@@ -11,18 +13,19 @@ from features.v1.auth.models import User
 from .schemas import (
     AnalysisRequest,
     AnalysisResultResponse,
-    RepositoryListResponse
+    RepositoryListResponse,
+    RepositoryAnalysisMVPResponse
 )
-from .models import AnalysisStatus
+from .models import AnalysisStatus, Analysis, RepositoryAnalysis
 from features.v1.github_analysis.dependencies import get_github_api_service
 from features.v1.github_analysis.services import GitHubAPIService
+from .services import AnalysisService, get_analysis_service
 
 router = FeatureRouter(
     name="repo",
     version="v1",
     description="GitHub Repository"
 )
-
 
 @router.get("/list", response_model=RepositoryListResponse)
 async def get_current_user_repositories(
@@ -54,7 +57,9 @@ async def get_current_user_repositories(
 async def start_analysis(
     request: AnalysisRequest,
     current_user: User = Depends(get_current_user),
-    # analysis_service: AnalysisService = Depends(get_analysis_service)
+    analysis_service: AnalysisService = Depends(get_analysis_service),
+    github_service: GitHubAPIService = Depends(get_github_api_service),
+    db: Session = Depends(get_db)
 ):
     """
     레포지토리 분석 시작
@@ -65,77 +70,72 @@ async def start_analysis(
     Returns:
         None
     """
-    repo_len = len(request.repo_urls)
-    if current_user.repo_count != 0:
+    locked_user = (
+        db.query(User)
+        .filter(User.id == current_user.id)
+        .with_for_update()
+        .first()
+    )
+    repo_len = len(request.repos)
+    if locked_user.repo_count != 0:
         raise BadRequestException("Repository analysis request is already used")
     
     if repo_len == 0:
         raise BadRequestException("repo_urls must not be empty")
     
-    current_user.repo_count += repo_len
+    locked_user.repo_count += repo_len
     
-    # TODO: 레포지토리 분석 시작
-    # await analysis_service.start_analysis(request, current_user.id)
+    # 1. github token 확인
+    try:
+        await github_service.verify_github_token()
+    except Exception:
+        raise UnauthorizedException()
+        
+    # 2. DB에 row 저장
+    repo_urls = [list(repo_dict.values())[0] for repo_dict in request.repos]
+    analysis = Analysis(user_id=current_user.id,
+                        repository_url=json.dumps(repo_urls),
+                        status=AnalysisStatus.PROCESSING,
+                        main_task_uuid=uuid.uuid4()
+                        )
+    db.add(analysis)
+    
+    repo_analysis_ids = []
+    for repo_dict in request.repos:
+        repo_name, repo_url = list(repo_dict.items())[0]
+        repo_analysis = RepositoryAnalysis(
+            user_id=current_user.id,
+            repository_name=repo_name,
+            repository_url=repo_url,
+            status=AnalysisStatus.PROCESSING,
+            main_task_uuid=analysis.main_task_uuid,
+            task_uuid=uuid.uuid4()
+        )
+        db.add(repo_analysis)
+        repo_analysis_ids.append(repo_analysis.task_uuid)
+    db.commit()
+    # 3. job 요청
+    analysis_service.request_analysis(current_user.id, repo_urls, analysis.main_task_uuid, repo_analysis_ids)
     return
 
 
 @router.get("/analyze", response_model=AnalysisResultResponse)
 async def get_analysis_result(
     user: User = Depends(get_current_user),
-    # analysis_service: AnalysisService = Depends(get_analysis_service)
+    db: Session = Depends(get_db)
 ):
     """분석 결과 조회"""
-    # TODO: analysis_service에서 조회하도록 수정
-    # repos = await analysis_service.get_results_by_user(user.id)
+    repos = db.query(RepositoryAnalysis).filter(
+                RepositoryAnalysis.user_id == user.id
+            ).all()
+    if not repos:
+        raise NotFoundException('Repository analysis result does not exist')
     return {
-        "repositories": [
-            {
-                "name": "sesami",
-                "url": "https://github.com/acme/sesami",
-                "state": AnalysisStatus.DONE,
-                "result": {
-                    "markdown": "## Summary\n- Great project\n- Stable release",
-                    "security_score": 0.3,  # 0~1 부동소수
-                    "stack": ["python", "fastapi", "postgresql"],
-                    "user": {
-                        "contribution": 30.0,  # % 기준이면 0~100 float
-                        "language": {
-                            "python": {
-                                "level": 5,
-                                "stack": {"fastapi": "상", "pydantic": "중"},
-                                "strength": ["async I/O", "type hints"],
-                                "weakness": ["test coverage"]
-                            }
-                        },
-                        "role": {"backend": 10}
-                    }
-                }
-            },
-            {
-                "name": "another-repo",
-                "url": "https://github.com/acme/another-repo",
-                "state": AnalysisStatus.PROCESSING,
-                "result": None,
-                "error_log": None
-            }
-        ]
+        "repositories": [RepositoryAnalysisMVPResponse(
+                name=repo.repository_name,
+                url=repo.repository_url,
+                state=repo.status,
+                error_log=repo.error_message,
+                result=repo.result if repo.result else None
+            ) for repo in repos]
     }
-
-
-@router.post("/result")
-async def complete_repository_analysis(
-    repo_analysis_id: UUID,
-    x_batch_secret: str = Header(),
-    # analysis_service: AnalysisService = Depends(get_analysis_service)
-):
-    """
-    Repository 분석 Batch 작업 완료 콜백
-    
-    Batch 컨테이너가 Repository 분석 완료 후 호출한다. DB에 분석 완료된 JSON을 읽어와서 저장
-
-    Args:
-        repo_analysis_id (UUID): Repository 분석 id
-        x_batch_secret (str, optional): Batch 컨테이너의 시크릿 키
-    """
-    # TODO: S3에서 uuid로 저장된 json 가져와서 db에 저장
-    return

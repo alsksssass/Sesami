@@ -11,8 +11,8 @@ RUN apk add --no-cache \
     postgresql-dev
 
 # requirements.txt 복사 및 의존성 설치
-COPY ../../src/backend/requirements.txt .
-COPY ../../src/shared /shared
+COPY src/backend/requirements.txt .
+COPY src/shared /shared
 ENV PYTHONPATH=/app:/shared
 RUN pip install --no-cache-dir -r requirements.txt
 

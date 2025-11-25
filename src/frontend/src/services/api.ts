@@ -156,7 +156,7 @@ export const api = {
      * @param size - 페이지 크기
      */
     searchUsers: async (params?: {
-      dev_type?: "backend" | "frontend" | "ai" | "data";
+      dev_type?: "Backend" | "Frontend" | "AI/ML" | "Data";
       page?: number;
       size?: number;
     }) => {
@@ -173,7 +173,7 @@ export const api = {
             level: 45,
             exp: 18500,
             stack: ["React", "TypeScript", "Node.js", "PostgreSQL"],
-            dev_type: ["frontend", "backend"],
+            dev_type: ["Frontend", "Backend"],
           },
           {
             order: 2,
@@ -181,7 +181,7 @@ export const api = {
             level: 42,
             exp: 16200,
             stack: ["Python", "TensorFlow", "PyTorch", "Scikit-learn"],
-            dev_type: ["ai", "data"],
+            dev_type: ["AI/ML", "Data"],
           },
           {
             order: 3,
@@ -189,7 +189,7 @@ export const api = {
             level: 38,
             exp: 14000,
             stack: ["Java", "Spring Boot", "MySQL", "Redis"],
-            dev_type: ["backend"],
+            dev_type: ["Backend"],
           },
           {
             order: 4,
@@ -197,7 +197,7 @@ export const api = {
             level: 40,
             exp: 15800,
             stack: ["Python", "Pandas", "SQL", "Tableau", "Apache Spark"],
-            dev_type: ["data"],
+            dev_type: ["Data"],
           },
           {
             order: 5,
@@ -205,7 +205,7 @@ export const api = {
             level: 50,
             exp: 22000,
             stack: ["Vue.js", "Django", "Docker", "Kubernetes", "AWS"],
-            dev_type: ["frontend", "backend", "ai"],
+            dev_type: ["Frontend", "Backend", "AI/ML"],
           },
         ];
 
@@ -443,10 +443,10 @@ export const api = {
     /**
      * 선택된 레포지토리 분석 요청
      */
-    analyzeRepositories: (repoUrls: string[]) =>
+    analyzeRepositories: (repoInfos: Record<string, string>[]) =>
       request<void>("/api/v1/repo/analyze", {
         method: "POST",
-        body: JSON.stringify({ repo_urls: repoUrls }),
+        body: JSON.stringify({ repos: repoInfos }),
       }),
 
     /**

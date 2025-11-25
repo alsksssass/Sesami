@@ -1,16 +1,18 @@
 from common.database import Base
-from sqlalchemy import Column, String, DateTime, JSON, UUID, ForeignKey, Enum
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.sql import func
 import uuid
 import enum
-import datetime
-from datetime import timezone
+from datetime import timezone, datetime
 
 
 class AnalysisStatus(str, enum.Enum):
-    """분석 작업 상태"""
-    PROCESSING = "progress"
-    DONE = "done"
-    ERROR = "error"    
+    """분석 상태"""
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 def utc_now():
@@ -19,32 +21,51 @@ def utc_now():
 
 # 각 레포지토리별 분석 결과를 저장하는 테이블
 class RepositoryAnalysis(Base):
+    """
+    각 레포지토리별 분석 결과를 저장하는 테이블
+
+    UserAggregatorResponse 결과를 JSON으로 저장
+
+    Note: user_id는 UUID 타입이지만 FK 제약조건 없음 (users 테이블 미존재 시 대응)
+    """
     __tablename__ = "repository_analysis"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    repository_url = Column(String, index=True)
-    result = Column(JSON, nullable=True) # RepositoryAnalysisResult 형태의 JSON
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)  # FK 제약조건 제거
+    repository_url = Column(String, index=True, nullable=False)
+    repository_name = Column(String, nullable=False)
+    result = Column(JSON, nullable=True)  # UserAggregatorResponse 형태의 JSON
 
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PROCESSING)
+    status = Column(SQLEnum(AnalysisStatus), default=AnalysisStatus.PROCESSING, nullable=False)
     error_message = Column(String, nullable=True)
-    
-    task_uuid = Column(UUID(as_uuid=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=utc_now)
-    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
-# 모든 분석이 끝난 후 종합 분석 결과를 저장하는 테이블
+    task_uuid = Column(PGUUID(as_uuid=True), nullable=True, index=True)
+    main_task_uuid = Column(PGUUID(as_uuid=True), nullable=True, index=True)  # 멀티 분석 시 종합 분석과 연결
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<RepositoryAnalysis(id={self.id}, url={self.repository_url}, status={self.status})>"
+
+
 class Analysis(Base):
+    """
+    모든 분석이 끝난 후 종합 분석 결과를 저장하는 테이블
+
+    RepoSynthesizerResponse 결과를 JSON으로 저장
+
+    Note: user_id는 UUID 타입이지만 FK 제약조건 없음 (users 테이블 미존재 시 대응)
+    """
     __tablename__ = "analysis"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    repository_url = Column(String, index=True)
-    # target_user = Column(String, nullable=False) # 분석 대상 GitHub 사용자명 -> username
-    result = Column(JSON, nullable=True) # UserAnalysisResult 형태의 JSON
+    id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)  # FK 제약조건 제거
+    repository_url = Column(String, index=True, nullable=False)  # 대표 레포지토리 URL
+    result = Column(JSON, nullable=True)  # RepoSynthesizerResponse 형태의 JSON
 
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PROCESSING)
+    status = Column(SQLEnum(AnalysisStatus), default=AnalysisStatus.PROCESSING, nullable=False)
     error_message = Column(String, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), default=utc_now)
-    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    main_task_uuid = Column(PGUUID(as_uuid=True), nullable=False, index=True)  # 종합 분석 식별자 (각 레포 분석과 연결)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

@@ -5,7 +5,7 @@ Sesami Shared Module
 PDD v4.0 Event Envelope 시스템
 """
 
-from .models import Analysis, AnalysisStatus
+from .models import Analysis, AnalysisState
 
-__all__ = ["Analysis", "AnalysisStatus"]
+__all__ = ["Analysis", "AnalysisState"]
 __version__ = "4.0.0"

@@ -45,8 +45,9 @@ class FeatureRouter(APIRouter):
         Args:
             app: FastAPI 애플리케이션 인스턴스
         """
-        from features.v1.user.api import search_router
+        from features.v1.user.api import search_router, public_router
         app.include_router(search_router)
+        app.include_router(public_router)
         
         for router in cls._registry:
             app.include_router(

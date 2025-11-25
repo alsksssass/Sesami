@@ -5,7 +5,7 @@ from typing import List
 
 from common.exceptions import NotFoundException
 from common.task_service import ITaskService
-from ..models import Analysis, AnalysisStatus
+from ..models import Analysis, AnalysisState
 from ..schemas import (
     AnalysisRequest,
     AnalysisResponse,
@@ -32,7 +32,7 @@ class AnalysisService:
             repo_url=request.repo_url,
             target_user=request.target_user,
             branch=request.branch,
-            status=AnalysisStatus.PENDING
+            status=AnalysisState.PENDING
         )
         self.db.add(analysis)
         self.db.commit()
@@ -53,7 +53,7 @@ class AnalysisService:
         return AnalysisResponse(
             analysis_id=analysis.id,
             task_id=task_id,
-            status=AnalysisStatus.PENDING.value,
+            status=AnalysisState.PENDING.value,
             message="Analysis request has been queued successfully"
         )
 
@@ -64,11 +64,11 @@ class AnalysisService:
             raise NotFoundException(f"Analysis {analysis_id} not found")
 
         # TaskService에서 최신 상태 확인
-        if analysis.task_id and analysis.status == AnalysisStatus.PENDING:
+        if analysis.task_id and analysis.status == AnalysisState.PENDING:
             task_status = await self.task_service.get_task_status(analysis.task_id)
             # 상태 업데이트
             if task_status.value == "STARTED":
-                analysis.status = AnalysisStatus.PROCESSING
+                analysis.status = AnalysisState.PROCESSING
                 self.db.commit()
 
         return AnalysisStatusResponse.model_validate(analysis)
