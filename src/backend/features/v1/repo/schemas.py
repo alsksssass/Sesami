@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from uuid import UUID
 
-from features.v1.repo.models import AnalysisState
+from features.v1.repo.models import AnalysisStatus
 
 
 # Repository Schemas
@@ -81,7 +81,7 @@ class RepositoryAnalysisResponse(BaseModel):
     name: str
     url: str
     result: Optional[RepositoryAnalysisResult] = None
-    state: AnalysisState
+    state: AnalysisStatus
     error_log: Optional[str] = None
     
     class Config:
@@ -91,11 +91,11 @@ class RepositoryAnalysisResponse(BaseModel):
 class RepositoryAnalysisMVPResponse(BaseModel):
     name: str
     url: str
-    result: dict[str, Any]
-    state: AnalysisState
+    result: Optional[dict[str, Any]] = None
+    state: AnalysisStatus
     error_log: Optional[str] = None
 
 
 class AnalysisResultResponse(BaseModel):
     """레포지토리 분석 결과 리스트 응답"""
-    repositories: List[RepositoryAnalysisResponse]
+    repositories: List[RepositoryAnalysisMVPResponse]

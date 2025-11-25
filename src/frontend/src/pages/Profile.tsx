@@ -9,21 +9,18 @@ import api from "../services/api";
 import ReactMarkdown from "react-markdown";
 
 interface RepositoryAnalysisResult {
-  markdown: string;
-  security_score: number;
-  stack: string[];
-  user: {
-    contribution: number;
-    language: Record<string, { level: number; exp: number }>;
-    role: Record<string, number>;
-  };
+  skill_profile_result?: any;
+  result?: string;  // ← 마크다운 문자열
+  reporter_result?: any;
+  user_aggregator_result?: any;
+  static_analyzer_result?: any;
 }
 
 interface RepositoryAnalysis {
   name: string;
   url: string;
   result?: RepositoryAnalysisResult; // 분석 결과 객체
-  state: "progress" | "done" | "error";
+  state: "PROCESSING" | "COMPLETED" | "FAILED";
   error_log?: string;
 }
 
@@ -163,14 +160,14 @@ export default function Profile() {
                   </h3>
                 </div>
                 <div className="p-6 bg-white">
-                  {userAnalysisLoading ? (
+                  {userAnalysisLoading || userAnalysis?.status === "PROCESSING" ? (
                     <div className="text-center py-8">
                       <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
                       <p className="mt-3 text-slate-600">
                         종합 분석을 생성하는 중...
                       </p>
                     </div>
-                  ) : userAnalysis ? (
+                  ) : userAnalysis?.status === "COMPLETED" ? (
                     <div className="markdown-content">
                       <ReactMarkdown>{userAnalysis.result}</ReactMarkdown>
                     </div>
@@ -216,16 +213,16 @@ export default function Profile() {
                       </div>
                     </div>
                     <div className="p-6 bg-white">
-                      {repo.state === "done" && repo.result ? (
+                      {repo.state === "COMPLETED" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown>{repo.result.markdown}</ReactMarkdown>
+                          <ReactMarkdown>{repo.result.result}</ReactMarkdown>
                         </div>
-                      ) : repo.state === "progress" ? (
+                      ) : repo.state === "PROCESSING" ? (
                         <div className="text-center py-8">
                           <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
                           <p className="mt-3 text-slate-600">분석 진행 중...</p>
                         </div>
-                      ) : repo.state === "error" ? (
+                      ) : repo.state === "FAILED" ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <p className="text-red-800">
                             <strong>오류:</strong> {repo.error_log}

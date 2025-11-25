@@ -17,7 +17,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
-class AnalysisStatus(str, enum.Enum):
+class AnalysisState(str, enum.Enum):
     """분석 작업 상태"""
     PENDING = "pending"
     PROCESSING = "processing"
@@ -35,7 +35,7 @@ class Analysis(Base):
     target_user = Column(String, nullable=False)  # 분석 대상 GitHub 사용자명
     branch = Column(String, default="main")  # 분석 대상 브랜치
     task_id = Column(String, nullable=True)  # Celery task_id 또는 AWS Batch job_id
-    status = Column(Enum(AnalysisStatus), default=AnalysisStatus.PENDING)
+    status = Column(Enum(AnalysisState), default=AnalysisState.PENDING)
     results = Column(JSON, nullable=True)  # 분석 결과 저장
     error_message = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)

@@ -11,10 +11,10 @@ import ReactMarkdown from "react-markdown";
 
 const categories = [
   { id: undefined, label: "전체" },
-  { id: "frontend", label: "프론트엔드" },
-  { id: "backend", label: "백엔드" },
-  { id: "ai", label: "AI / 머신러닝" },
-  { id: "data", label: "데이터" },
+  { id: "Frontend", label: "프론트엔드" },
+  { id: "Backend", label: "백엔드" },
+  { id: "AI/ML", label: "AI / 머신러닝" },
+  { id: "Data", label: "데이터" },
 ] as const;
 
 interface Developer {
@@ -29,7 +29,7 @@ export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<
-    "backend" | "frontend" | "ai" | "data" | undefined
+    "Backend" | "Frontend" | "AI/ML" | "Data" | undefined
   >(undefined);
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,7 @@ export default function Home() {
 
   // API 호출
   const fetchDevelopers = async (
-    devType?: "backend" | "frontend" | "ai" | "data"
+    devType?: "Backend" | "Frontend" | "AI/ML" | "Data"
   ) => {
     try {
       setLoading(true);

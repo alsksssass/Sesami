@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 200
     CHUNK_OVERLAP: int = 50
 
+    JOB_DEFINITION: str
+
     class Config:
         env_file = ".env"
         case_sensitive = True

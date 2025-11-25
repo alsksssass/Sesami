@@ -1,4 +1,5 @@
 from typing import List
+import uuid
 from common.exceptions import BadRequestException, UnauthorizedException, NotFoundException
 from fastapi import Depends, Response, Query, status, Header
 from uuid import UUID
@@ -15,7 +16,7 @@ from .schemas import (
     RepositoryListResponse,
     RepositoryAnalysisMVPResponse
 )
-from .models import AnalysisState, Analysis, RepositoryAnalysis
+from .models import AnalysisStatus, Analysis, RepositoryAnalysis
 from features.v1.github_analysis.dependencies import get_github_api_service
 from features.v1.github_analysis.services import GitHubAPIService
 from .services import AnalysisService, get_analysis_service
@@ -94,10 +95,10 @@ async def start_analysis(
     repo_urls = [list(repo_dict.values())[0] for repo_dict in request.repos]
     analysis = Analysis(user_id=current_user.id,
                         repository_url=json.dumps(repo_urls),
-                        status=AnalysisState.PROGRESS
+                        status=AnalysisStatus.PROCESSING,
+                        main_task_uuid=uuid.uuid4()
                         )
     db.add(analysis)
-    db.flush()
     
     repo_analysis_ids = []
     for repo_dict in request.repos:
@@ -106,14 +107,15 @@ async def start_analysis(
             user_id=current_user.id,
             repository_name=repo_name,
             repository_url=repo_url,
-            status=AnalysisState.PROGRESS
+            status=AnalysisStatus.PROCESSING,
+            main_task_uuid=analysis.main_task_uuid,
+            task_uuid=uuid.uuid4()
         )
         db.add(repo_analysis)
-        db.flush()
-        repo_analysis_ids.append(repo_analysis.id)
-    
+        repo_analysis_ids.append(repo_analysis.task_uuid)
+    db.commit()
     # 3. job 요청
-    analysis_service.request_analysis(current_user.id, repo_urls, analysis.id, repo_analysis_ids)
+    analysis_service.request_analysis(current_user.id, repo_urls, analysis.main_task_uuid, repo_analysis_ids)
     return
 
 
@@ -134,6 +136,6 @@ async def get_analysis_result(
                 url=repo.repository_url,
                 state=repo.status,
                 error_log=repo.error_message,
-                result=repo.result
+                result=repo.result if repo.result else None
             ) for repo in repos]
     }

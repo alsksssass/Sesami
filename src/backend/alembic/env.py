@@ -15,7 +15,7 @@ from config import settings
 from common.database import Base
 
 # Shared 모델 import (자동 테이블 감지)
-from shared.models import Analysis, AnalysisStatus
+from shared.models import Analysis, AnalysisState
 from shared.graph_models import GraphSnapshot, VectorIndex
 
 # Feature 모델 import

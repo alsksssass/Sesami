@@ -11,7 +11,7 @@ from common.exceptions import BadRequestException, NotFoundException, Unauthoriz
 from common.router_registry import FeatureRouter
 from common.dependencies import get_current_user, get_db
 from features.v1.auth.models import User
-from features.v1.repo.models import Analysis, AnalysisState
+from features.v1.repo.models import Analysis, AnalysisStatus
 from .schemas import (
     UserAnalysisResponse,
     UserAnalysisSearchRequest,
@@ -31,6 +31,11 @@ search_router = APIRouter(
     tags=["Search User Analysis"]
 )
 
+public_router = APIRouter(
+    prefix="/api/v1/public",
+    tags=["Public User Analysis"]
+)
+
 @router.get("/analyze", response_model=UserAnalysisMVPResponse)
 async def get_user_analysis(
     user: User = Depends(get_current_user),
@@ -40,8 +45,13 @@ async def get_user_analysis(
     analysis = db.query(Analysis).filter(Analysis.user_id == user.id).first()
     if analysis is None:
         raise NotFoundException('User analysis result does not exist')
+    if analysis.status != AnalysisStatus.COMPLETED:
+        return {
+            'status': AnalysisStatus.PROCESSING
+        }
+    user_analysis_result = analysis.result.get('user_analysis_result')
     return {
-        'result': analysis.result.get('markdown', ''),
+        'result': user_analysis_result.get('markdown', '') if analysis.result else None,
         'status': analysis.status
     }
 
@@ -59,7 +69,7 @@ async def search_user_analysis(
     query = db.query(Analysis, User).join(User, Analysis.user_id == User.id)
     
     # 분석 완료된 것만 필터링
-    query = query.filter(Analysis.status == AnalysisState.DONE)
+    query = query.filter(Analysis.status == AnalysisStatus.COMPLETED)
     
     # dev_type 필터링 (role의 키가 dev_type에 포함되는 경우)
     if dev_type:
@@ -67,16 +77,16 @@ async def search_user_analysis(
         conditions = []
         for dt in dev_type:
             condition = (
-                (Analysis.result.op('->')('role').op('->')(dt).isnot(None)) &
-                (Analysis.result.op('->')('role').op('->>')(dt).cast(Float) != 0)
+                (Analysis.result.op('->')('user_analysis_result').op('->')('role').op('->')(dt).isnot(None)) &
+                (Analysis.result.op('->')('user_analysis_result').op('->')('role').op('->>')(dt).cast(Float) != 0)
             )
             conditions.append(condition)
         query = query.filter(or_(*conditions))
     
     # level 순으로 정렬 (result->level->level 기준 내림차순)
     query = query.order_by(
-        Analysis.result.op('->')('level').op('->>')('level').cast(Integer).desc(),
-        Analysis.result.op('->')('level').op('->>')('experience').cast(Integer).desc()
+        Analysis.result.op('->')('user_analysis_result').op('->')('level').op('->>')('level').cast(Integer).desc(),
+        Analysis.result.op('->')('user_analysis_result').op('->')('level').op('->>')('experience').cast(Integer).desc()
     )
     
     # 전체 개수
@@ -89,7 +99,7 @@ async def search_user_analysis(
     # 응답 데이터 구성
     items = []
     for order, (analysis, user) in enumerate(results, start=offset + 1):
-        result_data = analysis.result or {}
+        result_data = analysis.result.get('user_analysis_result', {})
         level_data = result_data.get('level', {})
         
         items.append({
@@ -107,4 +117,22 @@ async def search_user_analysis(
         "page": page,
         "size": size,
         "pages": ceil(total / size) if total > 0 else 0
+    }
+
+@public_router.get("/analyze/{nickname}", response_model=UserAnalysisMVPResponse)
+async def get_public_user_analysis(
+    nickname: str,
+    db: Session = Depends(get_db)
+):
+    """공용 유저 종합 분석 결과 조회"""
+    user = db.query(User).filter(User.nickname == nickname).first()
+    if user is None:
+        raise NotFoundException('User does not exist')
+    analysis = db.query(Analysis).filter(Analysis.user_id == user.id).first()
+    if analysis is None:
+        raise NotFoundException('User analysis result does not exist')
+    user_analysis_result = analysis.result.get('user_analysis_result')
+    return {
+        'result': user_analysis_result.get('markdown', '') if analysis.result else None,
+        'status': analysis.status
     }
