@@ -1,0 +1,3 @@
+[submodule "deepagent"]
+	path = deepagent
+	url = git@github.com:alsksssass/deepagent.git
