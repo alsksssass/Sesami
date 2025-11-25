@@ -69,15 +69,14 @@ services:
   frontend-builder:
     build:
       context: .
-      dockerfile: ./docker/frontend/Dockerfile
+      dockerfile: ./docker/frontend/Dockerfile.prod
       args:
         VITE_API_URL: /api
-        VITE_BACKEND_URL:
-    env_file:
-      - .env
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+        VITE_USE_MOCK: false
     volumes:
-      - frontend-dist:/app/dist
-    command: sh -c "echo 'Frontend build complete. Files available in /app/dist'"
+      - frontend-dist:/volume
+    command: sh -c "cp -r /app/dist/* /volume/ && echo 'Frontend build complete. Files copied to volume.'"
     networks:
       - analyzer-net
 
