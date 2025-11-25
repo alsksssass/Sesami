@@ -5,6 +5,7 @@ from uuid import UUID
 
 from features.v1.repo.schemas import RepositoryAnalysisResponse
 from features.v1.repo.models import RepositoryAnalysis
+from config import settings
 
 from datetime import datetime
 
@@ -16,7 +17,7 @@ class AnalysisService():
     def request_analysis(self, user_id: UUID, urls: list[str], analysis_id: UUID, repo_ids: list[UUID]):
         jobName = 'deep-agents-' + datetime.now().strftime("%Y%m%d-%H%M%S")
         response = self.client.submit_job(jobName=jobName, jobQueue='deep-agents-queue',
-            jobDefinition='arn:aws:batch:ap-northeast-2:712111072528:job-definition/deep-agents-job:39',
+            jobDefinition=settings.JOB_DEFINITION,
             containerOverrides={
                 'environment': [
                     {

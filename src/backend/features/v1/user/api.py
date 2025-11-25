@@ -41,7 +41,7 @@ async def get_user_analysis(
     if analysis is None:
         raise NotFoundException('User analysis result does not exist')
     return {
-        'result': str(analysis.result),
+        'result': analysis.result.get('markdown', ''),
         'status': analysis.status
     }
 
