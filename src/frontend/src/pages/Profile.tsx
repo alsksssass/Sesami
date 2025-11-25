@@ -8,24 +8,26 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import ReactMarkdown from "react-markdown";
 
-interface RepositoryAnalysisResult {
-  skill_profile_result?: any;
-  result?: string;  // ← 마크다운 문자열
-  reporter_result?: any;
-  user_aggregator_result?: any;
-  static_analyzer_result?: any;
-}
-
 interface RepositoryAnalysis {
   name: string;
   url: string;
-  result?: RepositoryAnalysisResult; // 분석 결과 객체
-  state: "PROCESSING" | "COMPLETED" | "FAILED";
+  result?: {
+    markdown: string;
+    security_score: number;
+    stack: string[];
+    user: {
+      contribution: number;
+      language: Record<string, { level: number; exp: number }>;
+      role: Record<string, number>;
+    };
+  };
+  state: "done" | "progress" | "error";
   error_log?: string;
 }
 
 interface UserAnalysis {
   result: string; // 마크다운 형태의 종합 분석 결과
+  status?: "PROCESSING" | "COMPLETED" | "FAILED";
 }
 
 export default function Profile() {
@@ -213,16 +215,16 @@ export default function Profile() {
                       </div>
                     </div>
                     <div className="p-6 bg-white">
-                      {repo.state === "COMPLETED" && repo.result ? (
+                      {repo.state === "done" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown>{repo.result.result}</ReactMarkdown>
+                          <ReactMarkdown>{repo.result.markdown}</ReactMarkdown>
                         </div>
-                      ) : repo.state === "PROCESSING" ? (
+                      ) : repo.state === "progress" ? (
                         <div className="text-center py-8">
                           <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
                           <p className="mt-3 text-slate-600">분석 진행 중...</p>
                         </div>
-                      ) : repo.state === "FAILED" ? (
+                      ) : repo.state === "error" ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                           <p className="text-red-800">
                             <strong>오류:</strong> {repo.error_log}
