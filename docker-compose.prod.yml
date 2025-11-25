@@ -1,0 +1,138 @@
+# ====================================================================
+# Sesami PDD v4.0 - Docker Compose Configuration
+# ====================================================================
+#
+# Architecture:
+#   L0: Cloudflare Tunnel → Nginx → Frontend/Backend
+#   L1: Backend API + Main Orchestrator (FastAPI)
+#   L2: Sub Orchestrator (로컬: Celery, AWS: Step Functions)
+#   L3: Batch Jobs (L3-Tools, L3-Builders, L3-Agents)
+#
+# 변경사항 (v4.0):
+#   - ❌ Redis Queue 제거 (AWS SQS로 대체)
+#   - ❌ PostgreSQL 제거 (AWS RDS 사용)
+#   - ✅ Nginx Reverse Proxy 추가
+#   - ✅ Cloudflare Tunnel 추가
+#   - ✅ Frontend 프로덕션 빌드 + Nginx 정적 서빙
+#   - ✅ S3 스토리지 사용
+#
+# 빌드 순서:
+#   1. backend (독립적)
+#   2. frontend-builder (독립적, 병렬 빌드 가능)
+#   3. nginx (frontend-builder, backend 의존)
+#   4. cloudflare-tunnel (nginx 의존)
+# ====================================================================
+
+networks:
+  analyzer-net:
+    driver: bridge
+
+# ====================================================================
+# 서비스 정의 (의존성 순서대로 정렬)
+# ====================================================================
+services:
+  # ==================================================================
+  # 1. Backend API (독립적)
+  # ==================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend/Dockerfile
+    command: uvicorn main:app --host ${BACKEND_HOST} --port ${BACKEND_PORT} --reload
+    expose:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    volumes:
+      - ./src/backend:/app
+      - ./src/shared:/app/shared
+      - efs_mock:/mnt/efs
+    environment:
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - EFS_MOUNT_PATH=/mnt/efs
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    networks:
+      - analyzer-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:${BACKEND_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # ==================================================================
+  # 2. Frontend Builder (독립적, 병렬 빌드)
+  # ==================================================================
+  frontend-builder:
+    build:
+      context: .
+      dockerfile: ./docker/frontend/Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_BACKEND_URL:
+    env_file:
+      - .env
+    volumes:
+      - frontend-dist:/app/dist
+    command: sh -c "echo 'Frontend build complete. Files available in /app/dist'"
+    networks:
+      - analyzer-net
+
+  # ==================================================================
+  # 3. Nginx Reverse Proxy (Frontend Builder + Backend 의존)
+  # ==================================================================
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - frontend-dist:/usr/share/nginx/html:ro
+    networks:
+      - analyzer-net
+    depends_on:
+      frontend-builder:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ==================================================================
+  # 4. Cloudflare Tunnel (Nginx 의존, 프로덕션만)
+  # ==================================================================
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - analyzer-net
+    depends_on:
+      nginx:
+        condition: service_healthy
+    restart: unless-stopped
+
+# ====================================================================
+# 영속성 볼륨
+# ====================================================================
+volumes:
+  efs_mock:
+    driver: local
+    # AWS EFS 시뮬레이션 (로컬 개발용):
+    #   - L3 작업자가 결과를 /mnt/efs/{analysis_id}/l3_results/ 에 저장
+    #   - L2 Reducer가 /mnt/efs/{analysis_id}/l2_summaries/ 에 저장
+    #   - L1 Finalize가 /mnt/efs/{analysis_id}/l1_reports/ 에 저장
+    # AWS 환경에서는 실제 EFS 마운트로 대체
+
+  frontend-dist:
+    driver: local
+    # Frontend 빌드 결과물 저장 (frontend-builder → nginx 공유)

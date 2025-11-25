@@ -75,7 +75,7 @@ services:
       - /app/node_modules  # node_modules를 컨테이너 내부에서 관리
     environment:
       - VITE_API_URL=http://localhost:${BACKEND_PORT}
-      - NODE_ENV=development
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     env_file:
       - .env
     networks:
@@ -123,8 +123,3 @@ volumes:
     driver: local
   efs_mock:
     driver: local
-    # AWS EFS 시뮬레이션:
-    #   - L3 작업자가 결과를 /mnt/efs/{analysis_id}/l3_results/ 에 저장
-    #   - L2 Reducer가 /mnt/efs/{analysis_id}/l2_summaries/ 에 저장
-    #   - L1 Finalize가 /mnt/efs/{analysis_id}/l1_reports/ 에 저장
-    # AWS 환경에서는 실제 EFS 마운트로 대체

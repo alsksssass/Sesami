@@ -128,11 +128,11 @@ logs-backend: ## 백엔드 로그만 보기
 logs-worker: ## 워커 로그만 보기
 	docker-compose logs -f worker
 
-logs-db: ## 데이터베이스 로그 보기
-	docker-compose logs -f db
+logs-nginx: ## Nginx 로그 보기
+	docker-compose logs -f nginx
 
-logs-queue: ## Redis 큐 로그 보기
-	docker-compose logs -f queue
+logs-cloudflare: ## Cloudflare Tunnel 로그 보기
+	docker-compose logs -f cloudflare-tunnel
 
 # ============================================
 # 클린업
@@ -171,28 +171,22 @@ shell-backend: ## 백엔드 컨테이너 쉘 접속
 shell-worker: ## 워커 컨테이너 쉘 접속
 	docker-compose exec worker sh
 
-shell-db: ## 데이터베이스 컨테이너 쉘 접속
-	docker-compose exec db psql -U github_user -d github_db
-
 ps: ## 실행 중인 컨테이너 목록
 	docker-compose ps
 
 # ============================================
-# 데이터베이스
+# AWS Services (RDS, S3)
 # ============================================
 
-db-migrate: ## 데이터베이스 마이그레이션 실행
+db-migrate: ## 데이터베이스 마이그레이션 실행 (AWS RDS)
 	@echo "$(GREEN)🗄️  마이그레이션 실행 중...$(NC)"
 	docker-compose exec backend alembic upgrade head
 	@echo "$(GREEN)✅ 마이그레이션 완료$(NC)"
 
-db-reset: ## 데이터베이스 초기화 (위험!)
-	@echo "$(RED)⚠️  데이터베이스 초기화 중...$(NC)"
-	docker-compose down -v
-	docker-compose up -d db
-	@sleep 3
-	docker-compose up -d backend
-	@echo "$(GREEN)✅ 데이터베이스 초기화 완료$(NC)"
+s3-test: ## S3 연결 테스트
+	@echo "$(GREEN)🪣 S3 연결 테스트 중...$(NC)"
+	docker-compose exec backend python -c "import boto3; s3 = boto3.client('s3'); print('S3 Buckets:', [b['Name'] for b in s3.list_buckets()['Buckets']])"
+	@echo "$(GREEN)✅ S3 연결 성공$(NC)"
 
 # ============================================
 # 테스트
@@ -214,12 +208,12 @@ test-frontend: ## 프론트엔드 테스트 실행
 
 prod-build: ## 프로덕션 빌드
 	@echo "$(GREEN)🔨 프로덕션 빌드 중...$(NC)"
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
+	docker-compose -f docker-compose.prod.yml build
 	@echo "$(GREEN)✅ 프로덕션 빌드 완료$(NC)"
 
 prod-up: ## 프로덕션 환경 시작
 	@echo "$(GREEN)🚀 프로덕션 환경 시작...$(NC)"
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+	docker-compose -f docker-compose.prod.yml up -d
 	@echo "$(GREEN)✅ 프로덕션 환경 실행 중$(NC)"
 
 # ============================================
@@ -232,11 +226,13 @@ status: ## 서비스 상태 확인
 	@echo "$(BLUE)========================================$(NC)"
 	@docker-compose ps
 	@echo ""
-	@echo "$(GREEN)📊 Frontend:$(NC) http://localhost:5173"
-	@echo "$(GREEN)📊 Backend:$(NC)  http://localhost:8000"
-	@echo "$(GREEN)📊 API Docs:$(NC) http://localhost:8000/docs"
-	@echo "$(GREEN)📊 Database:$(NC) localhost:5432"
-	@echo "$(GREEN)📊 Redis:$(NC)    localhost:6379"
+	@echo "$(GREEN)🌐 Nginx:$(NC)     http://localhost"
+	@echo "$(GREEN)🔗 Cloudflare:$(NC) (Tunnel 설정 필요)"
+	@echo "$(GREEN)📊 Frontend:$(NC)  http://localhost (via Nginx)"
+	@echo "$(GREEN)📊 Backend:$(NC)   http://localhost/api (via Nginx)"
+	@echo "$(GREEN)📊 API Docs:$(NC)  http://localhost/docs"
+	@echo "$(GREEN)📊 Database:$(NC)  AWS RDS (환경변수로 설정)"
+	@echo "$(GREEN)📦 Storage:$(NC)   AWS S3 (환경변수로 설정)"
 
 install: ## 로컬 개발 환경 설정 (node_modules, venv 등)
 	@echo "$(GREEN)📦 의존성 설치 중...$(NC)"
@@ -370,20 +366,17 @@ ci: ## 통합 스모크 테스트 실행
 health-check: ## 모든 서비스 헬스체크
 	@echo "$(BLUE)🏥 서비스 헬스체크 중...$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Frontend:$(NC)"
-	@curl -f http://localhost:5173 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo "$(YELLOW)Nginx:$(NC)"
+	@curl -f http://localhost/health 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Backend API:$(NC)"
-	@curl -f http://localhost:8000/health 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo "$(YELLOW)Frontend (via Nginx):$(NC)"
+	@curl -f http://localhost 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Neo4j:$(NC)"
-	@docker-compose exec -T neo4j cypher-shell -u neo4j -p sesami_graph_2025 "RETURN 1;" >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo "$(YELLOW)Backend API (via Nginx):$(NC)"
+	@curl -f http://localhost/api/health 2>/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
 	@echo ""
-	@echo "$(YELLOW)OpenSearch:$(NC)"
-	@curl -k -f -u admin:Sesami@OpenSearch2025! https://localhost:9200/_cluster/health 2>/dev/null >/dev/null && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo "$(YELLOW)AWS RDS (Database):$(NC)"
+	@echo "$(BLUE)ℹ️  환경변수 DATABASE_URL로 설정됨$(NC)"
 	@echo ""
-	@echo "$(YELLOW)PostgreSQL:$(NC)"
-	@docker-compose exec -T db pg_isready -U sesami_user >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Redis:$(NC)"
-	@docker-compose exec -T queue redis-cli ping >/dev/null 2>&1 && echo "$(GREEN)✅ OK$(NC)" || echo "$(RED)❌ Failed$(NC)"
+	@echo "$(YELLOW)AWS S3 (Storage):$(NC)"
+	@echo "$(BLUE)ℹ️  환경변수 S3_BUCKET_NAME로 설정됨$(NC)"

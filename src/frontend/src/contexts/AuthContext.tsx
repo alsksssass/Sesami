@@ -13,11 +13,11 @@ import type { ReactNode } from "react";
 import api from "../services/api";
 
 interface User {
-  id: string;
+  id: string | number;
   github_id: string;
   username: string;
-  nickname: string;
-  repo_count: number;
+  nickname?: string;
+  repo_count?: number;
   email?: string;
   avatar_url?: string;
   created_at: string;
