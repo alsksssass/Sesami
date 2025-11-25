@@ -4,7 +4,7 @@
  */
 
 const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_URL || "/api";
 
 /**
  * HTTP 요청 헬퍼
@@ -81,7 +81,7 @@ export const api = {
      * GitHub OAuth 로그인 URL 받기
      */
     getGitHubLoginUrl: () =>
-      request<{ authorization_url: string }>("/api/v1/auth/github/login"),
+      request<{ authorization_url: string }>("/v1/auth/github/login"),
 
     /**
      * GitHub OAuth 콜백 처리
@@ -98,7 +98,7 @@ export const api = {
           avatar_url: string;
           created_at: string;
         };
-      }>("/api/v1/auth/github/callback", {
+      }>("/v1/auth/github/callback", {
         method: "POST",
         body: JSON.stringify({ code }),
       }),
@@ -135,14 +135,14 @@ export const api = {
         email?: string;
         avatar_url?: string;
         created_at: string;
-      }>("/api/v1/auth/me");
+      }>("/v1/auth/me");
     },
 
     /**
      * 로그아웃
      */
     logout: () =>
-      request<{ message: string }>("/api/v1/auth/logout", {
+      request<{ message: string }>("/v1/auth/logout", {
         method: "POST",
       }),
   },
@@ -239,8 +239,8 @@ export const api = {
 
       const queryString = queryParams.toString();
       const endpoint = queryString
-        ? `/api/v1/search?${queryString}`
-        : "/api/v1/search";
+        ? `/v1/search?${queryString}`
+        : "/v1/search";
 
       return request<{
         items: Array<{
@@ -437,14 +437,14 @@ export const api = {
           has_projects: boolean;
           has_wiki: boolean;
         }>;
-      }>("/api/v1/repo/list");
+      }>("/v1/repo/list");
     },
 
     /**
      * 선택된 레포지토리 분석 요청
      */
     analyzeRepositories: (repoInfos: Record<string, string>[]) =>
-      request<void>("/api/v1/repo/analyze", {
+      request<void>("/v1/repo/analyze", {
         method: "POST",
         body: JSON.stringify({ repos: repoInfos }),
       }),
@@ -457,7 +457,7 @@ export const api = {
         analysis_id: number;
         status: string;
         message: string;
-      }>("/api/v1/analysis/analyze", {
+      }>("/v1/analysis/analyze", {
         method: "POST",
         body: JSON.stringify({ repo_url: repoUrl }),
       }),
@@ -466,19 +466,19 @@ export const api = {
      * 분석 상태 조회
      */
     getAnalysisStatus: (analysisId: number) =>
-      request(`/api/v1/analysis/status/${analysisId}`),
+      request(`/v1/analysis/status/${analysisId}`),
 
     /**
      * 분석 결과 조회
      */
     getAnalysisResults: (analysisId: number) =>
-      request(`/api/v1/analysis/results/${analysisId}`),
+      request(`/v1/analysis/results/${analysisId}`),
 
     /**
      * 분석 히스토리 조회
      */
     getAnalysisHistory: (skip = 0, limit = 10) =>
-      request(`/api/v1/analysis/history?skip=${skip}&limit=${limit}`),
+      request(`/v1/analysis/history?skip=${skip}&limit=${limit}`),
 
     /**
      * 본인 레포지토리 분석 조회
@@ -597,7 +597,7 @@ HTML        █░░░░░░░░░░░░░░░░░░░░░  
           state: "progress" | "done" | "error";
           error_log?: string;
         }>;
-      }>("/api/v1/repo/analyze");
+      }>("/v1/repo/analyze");
     },
 
     /**
@@ -720,7 +720,7 @@ Data         ████████░░░░░░░░░░░░  40%
 `,
         });
       }
-      return request<{ result: string }>("/api/v1/user/analyze");
+      return request<{ result: string }>("/v1/user/analyze");
     },
 
     /**
