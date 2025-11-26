@@ -96,92 +96,92 @@ def require_admin(current_user=Depends(get_current_user)):
 _graph_service: IGraphService = None
 
 
-def get_graph_service() -> IGraphService:
-    """환경에 따라 적절한 GraphService 반환
+# def get_graph_service() -> IGraphService:
+#     """환경에 따라 적절한 GraphService 반환
 
-    로컬 환경: LocalGraphService (Neo4j Community)
-    AWS 환경: AwsGraphService (Neo4j AuraDB 또는 Neptune) - 추후 구현
+#     로컬 환경: LocalGraphService (Neo4j Community)
+#     AWS 환경: AwsGraphService (Neo4j AuraDB 또는 Neptune) - 추후 구현
 
-    Returns:
-        IGraphService: 그래프 데이터베이스 서비스 인스턴스
-    """
-    global _graph_service
+#     Returns:
+#         IGraphService: 그래프 데이터베이스 서비스 인스턴스
+#     """
+#     global _graph_service
 
-    if _graph_service is None:
-        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
-            # TODO: AWS 환경 구현 (Phase 3)
-            # from common.graph_service.aws_service import AwsGraphService
-            # _graph_service = AwsGraphService(...)
-            raise NotImplementedError("AWS GraphService is not implemented yet")
-        else:
-            # 로컬 환경: Neo4j Community
-            _graph_service = LocalGraphService(
-                uri=settings.NEO4J_URI,
-                user=settings.NEO4J_USER,
-                password=settings.NEO4J_PASSWORD
-            )
+#     if _graph_service is None:
+#         if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+#             # TODO: AWS 환경 구현 (Phase 3)
+#             # from common.graph_service.aws_service import AwsGraphService
+#             # _graph_service = AwsGraphService(...)
+#             raise NotImplementedError("AWS GraphService is not implemented yet")
+#         else:
+#             # 로컬 환경: Neo4j Community
+#             _graph_service = LocalGraphService(
+#                 uri=settings.NEO4J_URI,
+#                 user=settings.NEO4J_USER,
+#                 password=settings.NEO4J_PASSWORD
+#             )
 
-    return _graph_service
-
-
-# Vector Service 싱글톤 인스턴스
-_vector_service: IVectorService = None
+#     return _graph_service
 
 
-def get_vector_service() -> IVectorService:
-    """환경에 따라 적절한 VectorService 반환
-
-    로컬 환경: LocalVectorService (OpenSearch)
-    AWS 환경: AwsVectorService (OpenSearch Serverless) - 추후 구현
-
-    Returns:
-        IVectorService: 벡터 데이터베이스 서비스 인스턴스
-    """
-    global _vector_service
-
-    if _vector_service is None:
-        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
-            # TODO: AWS 환경 구현 (Phase 3)
-            # from common.vector_service.aws_service import AwsVectorService
-            # _vector_service = AwsVectorService(...)
-            raise NotImplementedError("AWS VectorService is not implemented yet")
-        else:
-            # 로컬 환경: OpenSearch
-            _vector_service = LocalVectorService(
-                endpoint=settings.OPENSEARCH_ENDPOINT,
-                user=settings.OPENSEARCH_USER,
-                password=settings.OPENSEARCH_PASSWORD,
-                default_index=settings.OPENSEARCH_INDEX_NAME
-            )
-
-    return _vector_service
+# # Vector Service 싱글톤 인스턴스
+# _vector_service: IVectorService = None
 
 
-# Task Service 싱글톤 인스턴스
-_task_service: ITaskService = None
+# def get_vector_service() -> IVectorService:
+#     """환경에 따라 적절한 VectorService 반환
+
+#     로컬 환경: LocalVectorService (OpenSearch)
+#     AWS 환경: AwsVectorService (OpenSearch Serverless) - 추후 구현
+
+#     Returns:
+#         IVectorService: 벡터 데이터베이스 서비스 인스턴스
+#     """
+#     global _vector_service
+
+#     if _vector_service is None:
+#         if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+#             # TODO: AWS 환경 구현 (Phase 3)
+#             # from common.vector_service.aws_service import AwsVectorService
+#             # _vector_service = AwsVectorService(...)
+#             raise NotImplementedError("AWS VectorService is not implemented yet")
+#         else:
+#             # 로컬 환경: OpenSearch
+#             _vector_service = LocalVectorService(
+#                 endpoint=settings.OPENSEARCH_ENDPOINT,
+#                 user=settings.OPENSEARCH_USER,
+#                 password=settings.OPENSEARCH_PASSWORD,
+#                 default_index=settings.OPENSEARCH_INDEX_NAME
+#             )
+
+#     return _vector_service
 
 
-def get_task_service() -> ITaskService:
-    """환경에 따라 적절한 TaskService 반환
+# # Task Service 싱글톤 인스턴스
+# _task_service: ITaskService = None
 
-    로컬 환경: LocalTaskService (Celery + Redis)
-    AWS 환경: AwsBatchTaskService (Step Functions + SQS + Batch)
 
-    Returns:
-        ITaskService: 작업 큐 서비스 인스턴스
-    """
-    global _task_service
+# def get_task_service() -> ITaskService:
+#     """환경에 따라 적절한 TaskService 반환
 
-    if _task_service is None:
-        if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
-            # AWS 환경: Step Functions + Batch
-            from common.task_service.aws_batch_service import AwsBatchTaskService
-            _task_service = AwsBatchTaskService()
-        else:
-            # 로컬 환경: Celery + Redis
-            _task_service = LocalTaskService(
-                broker_url=settings.CELERY_BROKER_URL,
-                result_backend=settings.CELERY_RESULT_BACKEND
-            )
+#     로컬 환경: LocalTaskService (Celery + Redis)
+#     AWS 환경: AwsBatchTaskService (Step Functions + SQS + Batch)
 
-    return _task_service
+#     Returns:
+#         ITaskService: 작업 큐 서비스 인스턴스
+#     """
+#     global _task_service
+
+#     if _task_service is None:
+#         if settings.TASK_SERVICE_IMPL == "AWS_BATCH":
+#             # AWS 환경: Step Functions + Batch
+#             from common.task_service.aws_batch_service import AwsBatchTaskService
+#             _task_service = AwsBatchTaskService()
+#         else:
+#             # 로컬 환경: Celery + Redis
+#             _task_service = LocalTaskService(
+#                 broker_url=settings.CELERY_BROKER_URL,
+#                 result_backend=settings.CELERY_RESULT_BACKEND
+#             )
+
+#     return _task_service

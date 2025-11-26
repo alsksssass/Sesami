@@ -35,15 +35,11 @@ services:
       - efs_mock:/mnt/efs  # L2 결과 저장용 (AWS EFS 시뮬레이션)
     environment:
       - DATABASE_URL=${DATABASE_URL}
-      - QUEUE_BROKER_URL=${QUEUE_BROKER_URL}
       - FRONTEND_URL=${FRONTEND_URL}
       - TASK_SERVICE_IMPL=${TASK_SERVICE_IMPL:-LOCAL}
-      - NEO4J_URI=${NEO4J_URI}
-      - NEO4J_USER=${NEO4J_USER}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
-      - OPENSEARCH_ENDPOINT=${OPENSEARCH_ENDPOINT}
-      - OPENSEARCH_USER=${OPENSEARCH_USER}
-      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - EFS_MOUNT_PATH=/mnt/efs
       - PYTHONPATH=/app
     env_file:
@@ -74,7 +70,7 @@ services:
       - ./src/frontend:/app
       - /app/node_modules  # node_modules를 컨테이너 내부에서 관리
     environment:
-      - VITE_API_URL=http://localhost:${BACKEND_PORT}
+      - VITE_API_URL=http://localhost:${BACKEND_PORT}/api
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     env_file:
       - .env
@@ -86,6 +82,30 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  # ==================================================================
+  # 3. Nginx Reverse Proxy (Frontend Builder + Backend 의존)
+  # ==================================================================
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - analyzer-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
 
   # ==================================================================
   # Infrastructure Services

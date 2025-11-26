@@ -23,6 +23,9 @@ class Settings(BaseSettings):
 
     # Bacth Job
     JOB_DEFINITION: str
+    
+    #aws region
+    AWS_REGION: str = "ap-northeast-2"
     class Config:
         env_file = ".env"
         case_sensitive = True

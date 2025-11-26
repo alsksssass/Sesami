@@ -31,7 +31,7 @@ class AnalysisService():
 
         return latest['jobDefinitionArn']
 
-    def request_analysis(self, user_id: UUID, urls: list[str], analysis_id: UUID, repo_ids: list[UUID]):
+    def request_analysis(self, user_id: UUID, user_name :str, urls: list[str], analysis_id: UUID, repo_ids: list[UUID]):
         jobName = 'deep-agents-' + datetime.now().strftime("%Y%m%d-%H%M%S")
 
         # 최신 ACTIVE Job Definition 가져오기
@@ -56,6 +56,15 @@ class AnalysisService():
                     {
                         'name': 'TASK_IDS',
                         'value': ','.join(str(repo_id) for repo_id in repo_ids)
+                    },
+                    {
+                        'name': 'TARGET_USER',
+                        'value': str(user_name) 
+                    }
+                    ,
+                    {
+                        'name': 'ENCRYPTION_KEY',
+                        'value': str(settings.ENCRYPTION_KEY)
                     }
                 ]
             }
