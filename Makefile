@@ -216,6 +216,9 @@ prod-up: ## 프로덕션 환경 시작
 	docker-compose -f docker-compose.prod.yml up -d
 	@echo "$(GREEN)✅ 프로덕션 환경 실행 중$(NC)"
 
+prod-clean:
+	docker-compose -f docker-compose.prod.yml down -v --rmi all
+
 # ============================================
 # 유틸리티
 # ============================================

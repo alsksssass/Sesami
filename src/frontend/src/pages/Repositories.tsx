@@ -210,7 +210,7 @@ const Repositories: React.FC = () => {
                         {/* Project Name */}
                         <div className="flex-1">
                           <h3 className="text-xl text-slate-900 mb-1">
-                            {repo.name}
+                            {repo.full_name}
                           </h3>
                         </div>
 

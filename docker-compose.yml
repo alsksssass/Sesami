@@ -70,7 +70,7 @@ services:
       - ./src/frontend:/app
       - /app/node_modules  # node_modules를 컨테이너 내부에서 관리
     environment:
-      - VITE_API_URL=http://localhost:${BACKEND_PORT}/api
+      - VITE_API_URL=${BACKEND_URL}:${BACKEND_PORT}/api
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     env_file:
       - .env
@@ -95,9 +95,9 @@ services:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - analyzer-net
-    depends_on:
-      backend:
-        condition: service_healthy
+    # depends_on:
+    #   backend:
+    #     condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
       interval: 10s

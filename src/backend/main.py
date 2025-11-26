@@ -33,7 +33,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        settings.FRONTEND_URL,          # http://localhost:3000
+        f"{settings.FRONTEND_URL}:5173",          # http://localhost:3000
         "http://localhost:5173",        # Vite 기본 포트
         "http://localhost:5174",        # Vite 대체 포트
     ],
