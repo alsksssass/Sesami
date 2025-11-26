@@ -1,0 +1,46 @@
+# ====================================================================
+# Frontend Production Dockerfile
+# ====================================================================
+# Multi-stage build:
+#   Stage 1: Build React app with Vite
+#   Stage 2: Minimal runtime (빌드 결과물만 포함)
+# ====================================================================
+
+# ============================================
+# Stage 1: Build
+# ============================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 의존성 파일 복사 및 설치
+COPY src/frontend/package*.json ./
+RUN npm ci
+
+# 소스 코드 복사
+COPY src/frontend/ ./
+
+# 환경 변수 (빌드 시점에 API URL 설정)
+ARG VITE_API_URL=/api
+ARG VITE_BACKEND_URL
+ARG VITE_USE_MOCK=false
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
+ENV VITE_USE_MOCK=${VITE_USE_MOCK}
+
+# 프로덕션 빌드
+RUN npm run build
+
+# ============================================
+# Stage 2: Runtime (빌드 결과물만)
+# ============================================
+FROM alpine:latest
+
+WORKDIR /app
+
+# Stage 1에서 빌드된 dist 디렉토리만 복사
+COPY --from=builder /app/dist /app/dist
+
+# 참고:
+#   - 이 이미지는 실행되지 않고, Nginx에서 볼륨으로 마운트하여 사용
+#   - docker-compose.yml에서 volumes_from을 사용하여 /app/dist 공유

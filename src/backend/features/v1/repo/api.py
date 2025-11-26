@@ -115,7 +115,7 @@ async def start_analysis(
         repo_analysis_ids.append(repo_analysis.task_uuid)
     db.commit()
     # 3. job 요청
-    analysis_service.request_analysis(current_user.id, repo_urls, analysis.main_task_uuid, repo_analysis_ids)
+    analysis_service.request_analysis(current_user.id, current_user.username, repo_urls, analysis.main_task_uuid, repo_analysis_ids)
     return
 
 

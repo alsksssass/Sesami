@@ -16,7 +16,7 @@ interface RepositoryAnalysisResult {
   static_analyzer_result?: any;
 }
 
-interface RepositoryAnalysis {
+export interface RepositoryAnalysis {
   name: string;
   url: string;
   result?: RepositoryAnalysisResult; // 분석 결과 객체
@@ -26,6 +26,7 @@ interface RepositoryAnalysis {
 
 interface UserAnalysis {
   result: string; // 마크다운 형태의 종합 분석 결과
+  status?: "PROCESSING" | "COMPLETED" | "FAILED";
 }
 
 export default function Profile() {
@@ -215,7 +216,7 @@ export default function Profile() {
                     <div className="p-6 bg-white">
                       {repo.state === "COMPLETED" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown>{repo.result.result}</ReactMarkdown>
+                          <ReactMarkdown>{repo.result?.result}</ReactMarkdown>
                         </div>
                       ) : repo.state === "PROCESSING" ? (
                         <div className="text-center py-8">

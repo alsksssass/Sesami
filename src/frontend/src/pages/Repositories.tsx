@@ -41,6 +41,7 @@ const Repositories: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRepos, setSelectedRepos] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const maxSelection = 3;
 
   useEffect(() => {
@@ -90,7 +91,14 @@ const Repositories: React.FC = () => {
   };
 
   const handleComplete = async () => {
+    // 이미 요청 중이면 무시
+    if (isSubmitting) {
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+
       // 선택된 레포지토리의 URL 가져오기
       const selectedRepoUrls = repos
         .filter((repo) => selectedRepos.includes(repo.id))
@@ -114,6 +122,8 @@ const Repositories: React.FC = () => {
           ? err.message
           : "레포지토리 분석 요청에 실패했습니다."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -133,14 +143,14 @@ const Repositories: React.FC = () => {
             </div>
             <button
               className={`px-8 py-2 rounded-md font-medium transition-colors ${
-                selectedRepos.length === 0
+                selectedRepos.length === 0 || isSubmitting
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-indigo-600 hover:bg-indigo-700 text-white"
               }`}
-              disabled={selectedRepos.length === 0}
+              disabled={selectedRepos.length === 0 || isSubmitting}
               onClick={handleComplete}
             >
-              선택완료 ({selectedRepos.length}/{maxSelection})
+              {isSubmitting ? "요청 중..." : `선택완료 (${selectedRepos.length}/${maxSelection})`}
             </button>
           </div>
 
@@ -200,7 +210,7 @@ const Repositories: React.FC = () => {
                         {/* Project Name */}
                         <div className="flex-1">
                           <h3 className="text-xl text-slate-900 mb-1">
-                            {repo.name}
+                            {repo.full_name}
                           </h3>
                         </div>
 
