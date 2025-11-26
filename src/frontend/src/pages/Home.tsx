@@ -2,7 +2,6 @@
  * 홈 페이지 (공개 랜딩 페이지)
  * 로그인 없이도 접근 가능
  */
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
@@ -26,8 +25,7 @@ interface Developer {
 }
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const { isLoading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<
     "Backend" | "Frontend" | "AI/ML" | "Data" | undefined
   >(undefined);
