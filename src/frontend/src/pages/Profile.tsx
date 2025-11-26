@@ -10,7 +10,7 @@ import ReactMarkdown from "react-markdown";
 
 interface RepositoryAnalysisResult {
   skill_profile_result?: any;
-  result?: string;  // ← 마크다운 문자열
+  result?: string; // ← 마크다운 문자열
   reporter_result?: any;
   user_aggregator_result?: any;
   static_analyzer_result?: any;
@@ -30,12 +30,19 @@ interface UserAnalysis {
 }
 
 export default function Profile() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [repositories, setRepositories] = useState<RepositoryAnalysis[]>([]);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [userAnalysis, setUserAnalysis] = useState<UserAnalysis | null>(null);
   const [userAnalysisLoading, setUserAnalysisLoading] = useState(false);
+
+  // 페이지 마운트 시 user 정보 백그라운드 재검증
+  useEffect(() => {
+    // 백그라운드에서 실제 user 정보 가져오기 (낙관적 업데이트 보정)
+    refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // repo_count가 0보다 클 때 분석 결과 조회
   useEffect(() => {
@@ -161,7 +168,8 @@ export default function Profile() {
                   </h3>
                 </div>
                 <div className="p-6 bg-white">
-                  {userAnalysisLoading || userAnalysis?.status === "PROCESSING" ? (
+                  {userAnalysisLoading ||
+                  userAnalysis?.status === "PROCESSING" ? (
                     <div className="text-center py-8">
                       <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
                       <p className="mt-3 text-slate-600">
