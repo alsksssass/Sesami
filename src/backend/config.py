@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     # Token Encryption
     ENCRYPTION_KEY: str
 
+    # Bacth Job
+    JOB_DEFINITION: str
     class Config:
         env_file = ".env"
         case_sensitive = True
