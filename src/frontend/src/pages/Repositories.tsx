@@ -35,7 +35,7 @@ interface Repository {
 }
 
 const Repositories: React.FC = () => {
-  const { user } = useAuth();
+  const { user, optimisticUpdateRepoCount } = useAuth();
   const navigate = useNavigate();
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,13 +102,16 @@ const Repositories: React.FC = () => {
       // 선택된 레포지토리의 URL 가져오기
       const selectedRepoUrls = repos
         .filter((repo) => selectedRepos.includes(repo.id))
-        .map((repo) => ({[repo.full_name]: repo.html_url}));
+        .map((repo) => ({ [repo.full_name]: repo.html_url }));
 
       if (selectedRepoUrls.length === 0) {
         return;
       }
 
       await api.analysis.analyzeRepositories(selectedRepoUrls);
+
+      // 낙관적 업데이트: repo_count를 선택한 개수로 즉시 업데이트
+      optimisticUpdateRepoCount(selectedRepoUrls.length);
 
       // 성공 메시지 표시
       alert(`${selectedRepoUrls.length}개의 레포지토리 분석이 시작되었습니다.`);
@@ -150,7 +153,9 @@ const Repositories: React.FC = () => {
               disabled={selectedRepos.length === 0 || isSubmitting}
               onClick={handleComplete}
             >
-              {isSubmitting ? "요청 중..." : `선택완료 (${selectedRepos.length}/${maxSelection})`}
+              {isSubmitting
+                ? "요청 중..."
+                : `선택완료 (${selectedRepos.length}/${maxSelection})`}
             </button>
           </div>
 

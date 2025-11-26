@@ -30,6 +30,7 @@ interface AuthContextType {
   login: (token: string, userData: User) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  optimisticUpdateRepoCount: (count: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const optimisticUpdateRepoCount = useCallback((count: number) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      return {
+        ...prevUser,
+        repo_count: count,
+      };
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -100,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshUser,
+        optimisticUpdateRepoCount,
       }}
     >
       {children}
