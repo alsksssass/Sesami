@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 interface RepositoryAnalysisResult {
   skill_profile_result?: any;
@@ -41,7 +42,23 @@ export default function Profile() {
   // 마크다운 텍스트 전처리 함수
   const preprocessMarkdown = (text: string): string => {
     // 이스케이프된 개행 문자를 실제 개행으로 변환
-    return text.replace(/\\n/g, "\n");
+    let processed = text.replace(/\\n/g, "\n");
+
+    // 텍스트 기반 프로그레스 바를 HTML 프로그레스 바로 변환
+    // 패턴: "Label          █░░░░░░░░░░░░░░░░░░░ XX.X%"
+    const progressBarPattern = /^(.+?)\s+([█░]+)\s+(\d+\.?\d*)%$/gm;
+
+    processed = processed.replace(
+      progressBarPattern,
+      (_match, label, _bar, percentage) => {
+        const cleanLabel = label.trim();
+        const percent = parseFloat(percentage);
+        // HTML 프로그레스 바로 변환 (div로 감싸서 블록 요소로 만들기)
+        return `<div style="display:flex;align-items:center;margin:0.5rem 0"><strong style="min-width:120px">${cleanLabel}</strong><span style="display:inline-block;width:200px;height:20px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin:0 12px"><span style="display:block;height:100%;background:linear-gradient(to right, #6366f1, #8b5cf6);width:${percent}%"></span></span><span style="color:#64748b">${percentage}%</span></div>`;
+      }
+    );
+
+    return processed;
   };
 
   // 페이지 마운트 시 user 정보 백그라운드 재검증
@@ -192,7 +209,10 @@ export default function Profile() {
                     </div>
                   ) : userAnalysis?.status === "COMPLETED" ? (
                     <div className="markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                      >
                         {preprocessMarkdown(userAnalysis.result)}
                       </ReactMarkdown>
                     </div>
@@ -240,7 +260,10 @@ export default function Profile() {
                     <div className="p-6 bg-white">
                       {repo.state === "COMPLETED" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                          >
                             {preprocessMarkdown(repo.result?.result || "")}
                           </ReactMarkdown>
                         </div>
