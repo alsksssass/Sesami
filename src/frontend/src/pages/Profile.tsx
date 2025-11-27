@@ -7,6 +7,7 @@ import { Folder, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface RepositoryAnalysisResult {
   skill_profile_result?: any;
@@ -37,6 +38,12 @@ export default function Profile() {
   const [userAnalysis, setUserAnalysis] = useState<UserAnalysis | null>(null);
   const [userAnalysisLoading, setUserAnalysisLoading] = useState(false);
 
+  // 마크다운 텍스트 전처리 함수
+  const preprocessMarkdown = (text: string): string => {
+    // 이스케이프된 개행 문자를 실제 개행으로 변환
+    return text.replace(/\\n/g, "\n");
+  };
+
   // 페이지 마운트 시 user 정보 백그라운드 재검증
   useEffect(() => {
     // 백그라운드에서 실제 user 정보 가져오기 (낙관적 업데이트 보정)
@@ -56,6 +63,13 @@ export default function Profile() {
     try {
       setAnalysisLoading(true);
       const data = await api.analysis.getMyRepositoryAnalysis();
+      console.log("[Repository Analysis Raw Data]", data);
+      data.repositories.forEach((repo: RepositoryAnalysis, index: number) => {
+        console.log(
+          `[Repository ${index + 1}: ${repo.name}]`,
+          repo.result?.result
+        );
+      });
       setRepositories(data.repositories);
     } catch (error) {
       console.error("분석 결과 조회 실패:", error);
@@ -178,7 +192,9 @@ export default function Profile() {
                     </div>
                   ) : userAnalysis?.status === "COMPLETED" ? (
                     <div className="markdown-content">
-                      <ReactMarkdown>{userAnalysis.result}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {preprocessMarkdown(userAnalysis.result)}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-slate-500">
@@ -224,7 +240,9 @@ export default function Profile() {
                     <div className="p-6 bg-white">
                       {repo.state === "COMPLETED" && repo.result ? (
                         <div className="markdown-content">
-                          <ReactMarkdown>{repo.result?.result}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {preprocessMarkdown(repo.result?.result || "")}
+                          </ReactMarkdown>
                         </div>
                       ) : repo.state === "PROCESSING" ? (
                         <div className="text-center py-8">

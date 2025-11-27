@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { X, Loader2, Filter } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 const categories = [
   { id: undefined, label: "전체" },
@@ -61,12 +63,36 @@ export default function Home() {
     fetchDevelopers(selectedCategory);
   }, [selectedCategory]);
 
+  // 마크다운 텍스트 전처리 함수
+  const preprocessMarkdown = (text: string): string => {
+    // 이스케이프된 개행 문자를 실제 개행으로 변환
+    let processed = text.replace(/\\n/g, "\n");
+
+    // 텍스트 기반 프로그레스 바를 HTML 프로그레스 바로 변환
+    // 패턴: "Label          █░░░░░░░░░░░░░░░░░░░ XX.X%"
+    const progressBarPattern = /^(.+?)\s+([█░]+)\s+(\d+\.?\d*)%$/gm;
+
+    processed = processed.replace(
+      progressBarPattern,
+      (_match, label, _bar, percentage) => {
+        const cleanLabel = label.trim();
+        const percent = parseFloat(percentage);
+        // HTML 프로그레스 바로 변환 (div로 감싸서 블록 요소로 만들기)
+        return `<div style="display:flex;align-items:center;margin:0.5rem 0"><strong style="min-width:120px">${cleanLabel}</strong><span style="display:inline-block;width:200px;height:20px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin:0 12px"><span style="display:block;height:100%;background:linear-gradient(to right, #6366f1, #8b5cf6);width:${percent}%"></span></span><span style="color:#64748b">${percentage}%</span></div>`;
+      }
+    );
+
+    return processed;
+  };
+
   // 개발자 클릭 시 분석 결과 조회
   const handleDeveloperClick = async (nickname: string) => {
     setSelectedDeveloper(nickname);
     setAnalysisLoading(true);
     try {
       const data = await api.analysis.getPublicUserAnalysis(nickname);
+      console.log(`[${nickname} Analysis Raw Data]`, data);
+      console.log(`[${nickname} Analysis Result]`, data.result);
       setAnalysisResult(data.result);
     } catch (error) {
       console.error("분석 결과 조회 실패:", error);
@@ -271,7 +297,17 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="markdown-content">
-                    <ReactMarkdown>{analysisResult}</ReactMarkdown>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                      components={{
+                        p: ({ children }) => (
+                          <p style={{ marginBottom: "0.5rem" }}>{children}</p>
+                        ),
+                      }}
+                    >
+                      {preprocessMarkdown(analysisResult)}
+                    </ReactMarkdown>
                   </div>
                 )}
               </div>
