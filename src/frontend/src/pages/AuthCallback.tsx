@@ -62,7 +62,7 @@ export default function AuthCallback() {
         setError(
           err instanceof Error
             ? err.message
-            : "로그인 처리 중 오류가 발생했습니다"
+            : "연동 처리 중 오류가 발생했습니다"
         );
         setTimeout(() => navigate("/login"), 3000);
       }
@@ -116,7 +116,7 @@ export default function AuthCallback() {
 
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-slate-900">
-                    로그인 처리 중...
+                    연동 처리 중...
                   </h2>
                   <p className="text-sm text-slate-600">잠시만 기다려주세요</p>
                 </div>
@@ -163,10 +163,10 @@ export default function AuthCallback() {
 
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-slate-900">
-                    로그인 성공!
+                    연동 성공!
                   </h2>
                   <p className="text-sm text-slate-600">
-                    환영합니다! 곧 홈으로 이동합니다...
+                    곧 지원자 페이지로 이동합니다...
                   </p>
                 </div>
               </div>
@@ -212,11 +212,11 @@ export default function AuthCallback() {
 
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-slate-900">
-                    로그인 실패
+                    연동 실패
                   </h2>
                   <p className="text-sm text-red-600">{error}</p>
                   <p className="text-xs text-slate-500">
-                    로그인 페이지로 돌아갑니다...
+                    연동 페이지로 돌아갑니다...
                   </p>
                 </div>
               </div>

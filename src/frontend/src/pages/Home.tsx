@@ -5,7 +5,7 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Filter } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const categories = [
@@ -101,10 +101,13 @@ export default function Home() {
         <div className="max-w-4xl mx-auto mb-12">
           <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 px-8 py-10 text-center">
             <h2 className="text-4xl font-bold bg-linear-to-r from-slate-900 to-indigo-900 bg-clip-text text-transparent mb-4">
-              GitHub Contribution Analyzer
+              지원자 코드 결과 분석
             </h2>
             <p className="text-xl text-slate-600">
-              GitHub 저장소의 코드를 분석하고 시각화합니다
+              지원자의 제출 코드를 자동으로 분석하여 평가합니다
+            </p>
+            <p className="text-l text-slate-600">
+              * 현재는 GitHub 코드 기반으로 분석 중입니다
             </p>
           </div>
         </div>
@@ -130,6 +133,29 @@ export default function Home() {
 
         {/* Results Table */}
         <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-linear-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-indigo-100 flex items-center justify-between">
+            <p className="text-slate-700 flex items-center gap-2">
+              <Filter className="w-4 h-4 text-indigo-600" />총{" "}
+              <span className="text-indigo-600 font-semibold">
+                {developers.length}
+              </span>
+              명의 지원자
+            </p>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-white border border-indigo-200 rounded-full text-sm text-slate-700">
+                평균 점수:{" "}
+                <span className="text-indigo-600 font-semibold">
+                  {developers.length > 0
+                    ? Math.round(
+                        developers.reduce((acc, d) => acc + d.level, 0) /
+                          developers.length
+                      )
+                    : 0}
+                </span>
+                /10
+              </span>
+            </div>
+          </div>
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -147,7 +173,7 @@ export default function Home() {
                       이름
                     </th>
                     <th className="px-6 py-4 text-left text-slate-700 font-semibold">
-                      레벨
+                      점수
                     </th>
                     <th className="px-6 py-4 text-left text-slate-700 font-semibold">
                       분야
@@ -185,7 +211,7 @@ export default function Home() {
                       </td>
                       <td className="px-6 py-5">
                         <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                          Lv.{dev.level}
+                          {dev.level}/10
                         </span>
                       </td>
                       <td className="px-6 py-5">

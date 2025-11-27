@@ -63,11 +63,11 @@ export default function Login() {
         <div className="bg-white px-8 py-10">
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h2 className="text-xl text-slate-900">환영합니다</h2>
+              <h2 className="text-3xl font-bold text-slate-900">지원하기</h2>
               <p className="text-sm text-slate-600">
-                GitHub 계정으로 로그인하고
+                GitHub 계정을 연동하여
                 <br />
-                당신의 개발 역량을 '깨알"같이 분석해보세요
+                지원할 Repository를 선택해주세요.
               </p>
             </div>
 
@@ -101,7 +101,7 @@ export default function Login() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>로그인 중...</span>
+                  <span>연동 중...</span>
                 </>
               ) : (
                 <>
@@ -112,13 +112,13 @@ export default function Login() {
                   >
                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                   </svg>
-                  <span>GitHub로 로그인</span>
+                  <span>GitHub 연동하기</span>
                 </>
               )}
             </button>
 
             <p className="text-xs text-center text-slate-500">
-              로그인하면 <span className="text-indigo-600">이용약관</span> 및{" "}
+              연동하면 <span className="text-indigo-600">이용약관</span> 및{" "}
               <span className="text-indigo-600">개인정보처리방침</span>에
               동의하게 됩니다
             </p>

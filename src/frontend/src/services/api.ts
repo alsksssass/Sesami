@@ -6,7 +6,7 @@
 import type { RepositoryAnalysis } from "../pages/Profile";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "/api";
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 /**
  * HTTP 요청 헬퍼
@@ -83,7 +83,7 @@ export const api = {
      * GitHub OAuth 로그인 URL 받기
      */
     getGitHubLoginUrl: () =>
-      request<{ authorization_url: string }>("/v1/auth/github/login"),
+      request<{ authorization_url: string }>("/api/v1/auth/github/login"),
 
     /**
      * GitHub OAuth 콜백 처리
@@ -100,7 +100,7 @@ export const api = {
           avatar_url: string;
           created_at: string;
         };
-      }>("/v1/auth/github/callback", {
+      }>("/api/v1/auth/github/callback", {
         method: "POST",
         body: JSON.stringify({ code }),
       }),
@@ -119,14 +119,14 @@ export const api = {
         email?: string;
         avatar_url?: string;
         created_at: string;
-      }>("/v1/auth/me");
+      }>("/api/v1/auth/me");
     },
 
     /**
      * 로그아웃
      */
     logout: () =>
-      request<{ message: string }>("/v1/auth/logout", {
+      request<{ message: string }>("/api/v1/auth/logout", {
         method: "POST",
       }),
   },
@@ -144,7 +144,6 @@ export const api = {
       page?: number;
       size?: number;
     }) => {
-
       // 프로덕션에서는 실제 API 호출
       const queryParams = new URLSearchParams();
       if (params?.dev_type) queryParams.append("dev_type", params.dev_type);
@@ -153,8 +152,8 @@ export const api = {
 
       const queryString = queryParams.toString();
       const endpoint = queryString
-        ? `/v1/search?${queryString}`
-        : "/v1/search";
+        ? `/api/v1/search?${queryString}`
+        : "/api/v1/search";
 
       return request<{
         items: Array<{
@@ -207,14 +206,14 @@ export const api = {
           has_projects: boolean;
           has_wiki: boolean;
         }>;
-      }>("/v1/repo/list");
+      }>("/api/v1/repo/list");
     },
 
     /**
      * 선택된 레포지토리 분석 요청
      */
     analyzeRepositories: (repoInfos: Record<string, string>[]) =>
-      request<void>("/v1/repo/analyze", {
+      request<void>("/api/v1/repo/analyze", {
         method: "POST",
         body: JSON.stringify({ repos: repoInfos }),
       }),
@@ -227,7 +226,7 @@ export const api = {
         analysis_id: number;
         status: string;
         message: string;
-      }>("/v1/analysis/analyze", {
+      }>("/api/v1/analysis/analyze", {
         method: "POST",
         body: JSON.stringify({ repo_url: repoUrl }),
       }),
@@ -236,32 +235,34 @@ export const api = {
      * 분석 상태 조회
      */
     getAnalysisStatus: (analysisId: number) =>
-      request(`/v1/analysis/status/${analysisId}`),
+      request(`/api/v1/analysis/status/${analysisId}`),
 
     /**
      * 분석 결과 조회
      */
     getAnalysisResults: (analysisId: number) =>
-      request(`/v1/analysis/results/${analysisId}`),
+      request(`/api/v1/analysis/results/${analysisId}`),
 
     /**
      * 분석 히스토리 조회
      */
     getAnalysisHistory: (skip = 0, limit = 10) =>
-      request(`/v1/analysis/history?skip=${skip}&limit=${limit}`),
+      request(`/api/v1/analysis/history?skip=${skip}&limit=${limit}`),
 
     /**
      * 본인 레포지토리 분석 조회
      */
     getMyRepositoryAnalysis: () => {
-      return request<{ repositories: RepositoryAnalysis[] }>("/v1/repo/analyze");
+      return request<{ repositories: RepositoryAnalysis[] }>(
+        "/api/v1/repo/analyze"
+      );
     },
 
     /**
      * 사용자 종합 분석 조회
      */
     getUserAnalysis: () => {
-      return request<{ result: string }>("/v1/user/analyze");
+      return request<{ result: string }>("/api/v1/user/analyze");
     },
 
     /**
@@ -270,13 +271,13 @@ export const api = {
      */
     getPublicUserAnalysis: (nickname: string) => {
       return request<{ result: string }>(
-        `/v1/public/analyze/${encodeURIComponent(nickname)}`
+        `/api/v1/public/analyze/${encodeURIComponent(nickname)}`
       );
     },
   },
 
   // 헬스체크
-  health: () => request<{ status: string; database: string }>("/health"),
+  health: () => request<{ status: string; database: string }>("/api/health"),
 };
 
 export default api;
