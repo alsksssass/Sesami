@@ -37,7 +37,7 @@ async def get_current_user_repositories(
 ):
     """
     현재 로그인한 유저의 특정 언어 레포지토리 조회
-    
+
     Arguments:
         languages: 조회하고자 하는 언어(레포지토리의 주 언어) 리스트
 
@@ -78,19 +78,19 @@ async def start_analysis(
     )
     repo_len = len(request.repos)
     if locked_user.repo_count != 0:
-        raise BadRequestException("Repository analysis request is already used")
-    
+        raise BadRequestException("이미 지원 완료하였습니다.")
+
     if repo_len == 0:
         raise BadRequestException("repo_urls must not be empty")
-    
+
     locked_user.repo_count += repo_len
-    
+
     # 1. github token 확인
     try:
         await github_service.verify_github_token()
     except Exception:
         raise UnauthorizedException()
-        
+
     # 2. DB에 row 저장
     repo_urls = [list(repo_dict.values())[0] for repo_dict in request.repos]
     analysis = Analysis(user_id=current_user.id,
@@ -99,7 +99,7 @@ async def start_analysis(
                         main_task_uuid=uuid.uuid4()
                         )
     db.add(analysis)
-    
+
     repo_analysis_ids = []
     for repo_dict in request.repos:
         repo_name, repo_url = list(repo_dict.items())[0]

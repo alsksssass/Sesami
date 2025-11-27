@@ -139,9 +139,11 @@ const Repositories: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl text-slate-900 mb-2">레포지토리 선택</h1>
+              <h1 className="text-3xl font-bold text-slate-900 mb-8">
+                지원할 Repository를 선택해주세요
+              </h1>
               <p className="text-slate-600">
-                총 {repos.length}개 (최대 {maxSelection}개 선택 가능)
+                최대 3개까지 선택 가능하며, 선택된 Repository의 코드를 분석하여 지원자 평가에 활용됩니다.
               </p>
             </div>
             <button

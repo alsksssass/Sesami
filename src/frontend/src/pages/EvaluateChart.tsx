@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
+import { ChevronRight, Upload } from "lucide-react";
 import evaluateChartData from "../assets/evaluate_chart.csv?raw";
 
 interface SkillData {
@@ -297,6 +297,7 @@ export default function EvaluateChart() {
   const [selectedSkill, setSelectedSkill] = useState<SkillDetail | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Parse CSV data
   const parseCSV = (csv: string): SkillData[] => {
@@ -348,6 +349,21 @@ export default function EvaluateChart() {
     });
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // TODO: CSV 파일 업로드 처리 로직 구현
+      console.log("선택된 파일:", file.name);
+      alert(`평가기준이 업데이트 되었습니다.\n`);
+      // 파일 입력 초기화
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50/30">
       <div className="container mx-auto px-6 py-12">
@@ -358,18 +374,34 @@ export default function EvaluateChart() {
               평가 기준
             </h1>
             <p className="text-lg text-slate-600">
-              Sesami는 GitHub 데이터를 기반으로 개발자의 역량을 종합적으로
+              Sesami는 평가기준표를 기반으로 지원자의 역량을 종합적으로
               분석합니다
             </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
 
           {/* Content Card */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="border-b bg-linear-to-r from-indigo-50 to-purple-50 px-8 py-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                상세 스킬 평가 기준
-              </h2>
-              <p className="text-sm text-slate-600 mt-2">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  상세 스킬 평가 기준
+                </h2>
+                <button
+                  onClick={handleUploadClick}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg whitespace-nowrap shrink-0"
+                >
+                  <Upload className="w-5 h-5" />
+                  <span className="font-medium">평가기준표 업데이트</span>
+                </button>
+              </div>
+              <p className="text-sm text-slate-600">
                 각 스킬은 Basic, Intermediate, Advanced 레벨로 평가되며,
                 가중치가 적용된 점수를 부여합니다. 셀을 클릭하면 상세한 평가
                 기준을 확인할 수 있습니다.
