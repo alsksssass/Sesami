@@ -3,13 +3,11 @@
 
 # 🚀 Sesami v4.0 – **AI 기반 개발자 실력 검증 플랫폼**
 
-### **해커톤 제출용 공식 README**
 
 <div align="center">
 
 ### **“LLM Multi-Agent로 개발자의 ‘진짜 실력’을 증명한다”**
 
-팀 프로젝트 기여도 조작, 포트폴리오 포장, GitHub 경력 부풀리기…
 **이제 AI가 직접 개발자의 코드를 ‘함수 단위’까지 파고들어 분석합니다.**
 
 [➡️ 구현 사이트](https://sesami.crimecat.org/)
