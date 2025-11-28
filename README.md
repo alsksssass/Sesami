@@ -216,11 +216,11 @@ DB 연동 구조
 
 ---
 
-# 🔥 9. 왜 해커톤에서 우승할 프로젝트인가? (Why This Project Wins)
+# 🔥 9. 우리 프로젝트의 강점
 
 ### 1) **HR-Tech + AI + GraphDB + Multi-Agent**
 
-현재 가장 뜨거운 기술 4개가 유기적으로 결합된 솔루션.
+최신 트렌드 기술 4개가 유기적으로 결합된 솔루션.
 
 ### 2) **명확한 문제 해결 → 기업 니즈 직결**
 
@@ -233,15 +233,7 @@ DB 연동 구조
 * LangGraph
 * RAG Hybrid
 * AWS Batch 병렬 처리
-  이 정도 기술 조합은 해커톤에서 극소수 팀만 구현 가능.
 
-### 4) **시연이 강력함**
-
-레포지토리 선택 → 분석 → 상세 리포트가 뜨는 과정 자체가 “와!”가 나옴.
-
-### 5) **이미 실서비스 수준 완성도**
-
-Demo URL + FastAPI + React + Docker 구성까지 완비.
 
 ---
 
@@ -249,7 +241,6 @@ Demo URL + FastAPI + React + Docker 구성까지 완비.
 
 * 다국어 코드 분석(LangChain Tools)
 * Go / Rust / Java / C++ 확장
-* GitLab / Bitbucket 지원
 * AI 인터뷰 솔루션 연동
 * 기업용 관리자 페이지 (채용 파이프라인 자동화)
 * 인재 매칭 추천 엔진 (개발자 ↔ 기업 매칭)
@@ -262,7 +253,7 @@ Demo URL + FastAPI + React + Docker 구성까지 완비.
 | -------------- | --------------------- | -------------------------------------------------------------- |
 | **alsksssass** | 인프라·백엔드·Deep Agent 총괄 | [https://github.com/alsksssass](https://github.com/alsksssass) |
 | **smj53**      | 백엔드·Deep Agent 개발      | [https://github.com/smj53](https://github.com/smj53)           |
-| **somilee**    | 프론트엔드 개발              | [https://github.com/somilee](https://github.com/somilee)       |
+| **somilee**    | UX/UI 디자인 총괄·프론트엔드 개발        | [https://github.com/somilee](https://github.com/somilee)       |
 
 ---
 
