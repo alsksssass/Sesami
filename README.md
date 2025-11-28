@@ -1,5 +1,5 @@
 
----
+
 
 # 🚀 Sesami v4.0 – **AI 기반 개발자 실력 검증 플랫폼**
 
@@ -12,6 +12,7 @@
 
 [➡️ 구현 사이트](https://sesami.crimecat.org/)
 [➡️ GitHub Repo](https://github.com/alsksssass/Sesami)
+[➡️ 시연 영상](https://www.youtube.com/watch?v=Ar82IGwsPqY)
 
 </div>
 
@@ -124,20 +125,21 @@ LangGraph 기반
 
 ---
 
-# 🧪 5. 사용 방법
+## 🧪 5. 사용 방법
 
-### 🔹 Step 1. GitHub OAuth 로그인
+### 🔹 지원자
 
-### 🔹 Step 2. 분석할 레포 선택
+* ### Step 1. **GitHub 계정 연동** (OAuth 로그인)
+* ### Step 2. **평가받을 레포지토리 선택** 및 분석 요청
+* ### Step 3. **AI 분석 시작** 및 지원 완료
+* ### Step 4. **개인 역량 리포트**를 통해 자신의 코드 분석 결과 열람 가능
 
-### 🔹 Step 3. "분석 시작" 클법
+---
 
-### 🔹 Step 4. 실시간 진행률 확인
+### 🔹 채용 담당자
 
-### 🔹 Step 5. 최종 리포트 열람
-
-**Demo URL:** [https://sesami.crimecat.org/](https://sesami.crimecat.org/)
-(git oauth Login)
+* ### Step 1. 기업별 **맞춤형 평가 기준 등록**
+* ### Step 2. **역량 순위별 대시보드**에서 지원자 직무 및 상세 리포트 한눈에 파악
 
 ---
 
