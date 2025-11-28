@@ -140,6 +140,7 @@ LangGraph 기반
 
 * ### Step 1. 기업별 **맞춤형 평가 기준 등록**
 * ### Step 2. **역량 순위별 대시보드**에서 지원자 직무 및 상세 리포트 한눈에 파악
+  ![Image](https://github.com/user-attachments/assets/682a234c-acf2-40a2-9532-2279fd37e80a)
 
 ---
 
