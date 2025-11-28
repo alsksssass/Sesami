@@ -130,26 +130,26 @@ LangGraph 기반
 ### 🔹 지원자
 
 * ### Step 1. **GitHub 계정 연동** (OAuth 로그인)
-  ![Image](https://github.com/user-attachments/assets/43befa0f-2fc2-4090-b6a2-0502ac59e56a)
+  ![Image](/gif/43befa0f-2fc2-4090-b6a2-0502ac59e56a.gif)
   
 * ### Step 2. **평가받을 레포지토리 선택** 및 분석 요청
-  ![Image](https://github.com/user-attachments/assets/38c89857-bcc3-4ea2-965f-74e4e2566209)
+  ![Image](/gif/38c89857-bcc3-4ea2-965f-74e4e2566209.gif)
   
 * ### Step 3. **AI 분석 시작** 및 지원 완료
-  ![Image](https://github.com/user-attachments/assets/da139f78-80c6-4802-864f-85bb11f2a261)
+  ![Image](/gif/da139f78-80c6-4802-864f-85bb11f2a261.gif)
   
 * ### Step 4. **개인 역량 리포트**를 통해 자신의 코드 분석 결과 열람 가능
-  ![Image](https://github.com/user-attachments/assets/44daeff8-ceed-484f-893e-13b7aacf699e)
+  ![Image](/gif/44daeff8-ceed-484f-893e-13b7aacf699e.gif)
 
 ---
 
 ### 🔹 채용 담당자
 
 * ### Step 1. 기업별 **맞춤형 평가 기준 등록**
-  ![Image](https://github.com/user-attachments/assets/10bcc48b-b6a8-43bd-a36f-e4f049fdaa44)
+  ![Image](/gif/10bcc48b-b6a8-43bd-a36f-e4f049fdaa44.gif)
 
 * ### Step 2. **역량 순위별 대시보드**에서 지원자 직무 및 상세 리포트 한눈에 파악
-  ![Image](https://github.com/user-attachments/assets/682a234c-acf2-40a2-9532-2279fd37e80a)
+  ![Image](/gif/682a234c-acf2-40a2-9532-2279fd37e80a.gif)
 
 ---
 
