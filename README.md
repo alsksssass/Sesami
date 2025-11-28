@@ -1,82 +1,270 @@
-# Sesami - GitHub Contribution Analyzer
-
-Sesami는 GitHub 저장소와 개발자의 활동을 분석해 **정량/정성 기여 지표**와 **Graph-RAG 기반 인사이트**를 제공하는 플랫폼을 목표로 합니다. 최신 아키텍처 방향은 [`CLAUDE.md`](./CLAUDE.md)에 정리되어 있으며, 본 문서는 현재 레포지토리 상태와 구축 계획을 한눈에 파악할 수 있도록 정리합니다.
-
-## 현재 구현 현황 요약
-
-| 영역 | 현재 레포지토리 상태 | 최신 아키텍처 방향 (`CLAUDE.md`) |
-| --- | --- | --- |
-| 프론트엔드 | React 19 + Vite + Tailwind 기반 UI, OAuth 흐름/분석 뷰 등 주요 페이지 골격 존재 | 동일 스택 유지, Graph-RAG 결과 시각화 및 분석 리포트 UX 고도화 |
-| 백엔드 | 코드 미구현 (`src/backend` 비어 있음) | FastAPI + PostgreSQL + SQLAlchemy 2.0, TaskService 추상화, Graph/Vector 파이프라인 API |
-| 워커 | 코드 미구현 (`src/worker` 비어 있음) | 로컬: Celery + Redis, 프로덕션: AWS Batch + Step Functions + SQS |
-| 데이터 계층 | Docker Compose로 PostgreSQL/Redis 컨테이너 스켈레톤만 정의 | PostgreSQL + Neo4j + OpenSearch, 그래프 스냅샷/시맨틱 인덱스 파이프라인 |
-| 인프라/운영 | Docker/Makefile 스켈레톤 존재 | AWS 기반 관측성(X-Ray, CloudWatch), 시크릿/배포 전략 정립 |
-
-👉 전체 아키텍처와 목표 기능의 세부 사항은 [`CLAUDE.md`](./CLAUDE.md)를 참고하세요.
-
-## 디렉터리 구조
-
-```
-Sesami/
-├── docker/                 # Docker 빌드 컨텍스트 (backend/worker 이미지는 추후 구현 필요)
-├── docker-compose.yml      # 로컬 멀티 서비스 구성 (현 단계에선 backend/worker 컨테이너 실행 불가)
-├── docs/                   # 설계 문서, 작업 계획 등
-├── src/
-│   ├── frontend/           # React/Vite 애플리케이션 (현재 유일한 실제 구현 영역)
-│   ├── backend/            # FastAPI 서비스 자리 (현재 .gitkeep만 존재)
-│   └── worker/             # 분석 워커 자리 (현재 .gitkeep만 존재)
-├── Makefile                # Docker Compose 헬퍼 명령
-├── CLAUDE.md               # 최신 아키텍처/운영 가이드
-└── README.md               # 현재 문서
-```
-
-## 개발 환경 준비
-
-### 1. 프론트엔드 단독 실행 (임시)
-
-백엔드/워커 구현 전까지는 프론트엔드만 로컬에서 확인할 수 있습니다.
-
-```bash
-cd src/frontend
-npm install
-npm run dev
-```
-
-> `.env`의 `VITE_BACKEND_URL`은 아직 구현되지 않은 API 엔드포인트를 가리킵니다. 프론트엔드 API 호출은 네트워크 에러가 발생할 수 있으며, 목 데이터/Mocking이 필요합니다.
-
-### 2. Docker Compose 스켈레톤
-
-전체 스택 실행용 명령은 이미 마련되어 있으나, 백엔드/워커 이미지 빌드에 필요한 코드와 `requirements.txt` 등이 아직 없습니다. 코드가 준비된 이후에는 아래 명령으로 통합 환경을 띄울 수 있습니다.
-
-```bash
-make dev          # docker-compose up
-make dev-d        # 백그라운드 실행
-make stop / down  # 컨테이너 종료
-make logs         # 통합 로그 스트림 확인
-```
-
-> `docker/backend/Dockerfile`, `docker/worker/Dockerfile` 등은 추후 FastAPI/Celery 애플리케이션 코드와 의존성을 추가해야 정상 빌드됩니다.
-
-## 테스트 & 품질
-
-- 프론트엔드: `npm run lint`, `npm test`, `npm run build`
-- 백엔드/워커: 아직 테스트 코드 없음. `CLAUDE.md`에서는 `pytest` 기반 백엔드 테스트, 통합 스모크(`make ci`)를 목표로 합니다.
-
-## 목표 아키텍처 하이라이트
-
-`CLAUDE.md`에서 정의된 주요 아키텍처 방향은 다음과 같습니다.
-
-- **TaskService 추상화**: 로컬(Celery)과 프로덕션(AWS Batch) 환경 간 작업 큐 구현을 스위치할 수 있는 인터페이스.
-- **Graph-RAG 파이프라인**: Tree-sitter 기반 AST 추출 → Neo4j 적재 → OpenSearch 시맨틱 인덱싱.
-- **관측성 및 운영 가드레일**: CloudWatch/X-Ray, Secrets Manager, 테스트/마이그레이션 절차 등.
-
-이러한 요소들은 현재 코드베이스에는 구현되어 있지 않으며, 향후 작업 계획(`docs/WORK_PLAN.md`)에 따라 점진적으로 반영될 예정입니다.
-
-## 다음 단계
-
-- [`docs/WORK_PLAN.md`](./docs/WORK_PLAN.md)에 최신 아키텍처 대비 누락된 구현 목록과 우선순위를 정리했습니다.
-- 우선 백엔드/워커 코드 스캐폴딩과 TaskService 인터페이스 정의부터 진행하고, 이후 그래프/시맨틱 파이프라인과 AWS 인프라 요소를 순차적으로 도입하는 것이 권장됩니다.
 
 ---
 
-문의나 논의가 필요하면 이슈/PR에 `architecture`, `backend`, `worker`, `graph-rag` 레이블을 사용해 주세요.
+# 🚀 Sesami v4.0 – **AI 기반 개발자 실력 검증 플랫폼**
+
+### **해커톤 제출용 공식 README**
+
+<div align="center">
+
+### **“LLM Multi-Agent로 개발자의 ‘진짜 실력’을 증명한다”**
+
+팀 프로젝트 기여도 조작, 포트폴리오 포장, GitHub 경력 부풀리기…
+**이제 AI가 직접 개발자의 코드를 ‘함수 단위’까지 파고들어 분석합니다.**
+
+[➡️ 구현 사이트](https://sesami.crimecat.org/)
+[➡️ GitHub Repo](https://github.com/alsksssass/Sesami)
+
+</div>
+
+---
+
+# 🎯 1. 문제 정의 (Problem Statement)
+
+현행 개발자 채용 프로세스는 심각한 문제를 가지고 있습니다.
+
+### ❗ 1) 포트폴리오 기반 평가의 신뢰 부족
+
+* GitHub 레포 대부분이 **팀 프로젝트**
+* "이 사람이 실제로 작성한 코드인가?" 확인 불가
+
+### ❗ 2) 레포/파일 단위 요약은 피상적
+
+* 단순 요약 AI 도구는 **기여도도, 코드 품질도 측정 못함**
+
+### ❗ 3) 기업은 빠르고 정확한 검증을 원함
+
+* 인사팀은 기술을 모르고, 개발팀은 시간이 없음
+
+---
+
+# 💡 2. 솔루션 (What We Built)
+
+우리는 **LLM 기반 Multi-Agent 오케스트레이션**으로
+개발자의 GitHub 전체를 **함수(Function) 단위**까지 자동으로 분석하는 플랫폼을 만들었습니다.
+
+## ✨ Sesami v4.0의 핵심 기능
+
+### 🧬 1) **Commit Level Authorship Verification**
+
+Git 로그 + Diff + Metadata → **작성자 코드만 자동 추출**
+
+### 🧩 2) **Function-Level Deep Code Analysis**
+
+파일이 아닌 **AST(Tree-sitter) 기반 함수 단위 분석**
+
+### 🕸️ 3) **Graph-RAG + Vector-RAG 하이브리드 구조**
+
+* Neo4j 코드/커밋 그래프
+* ChromaDB 벡터 임베딩
+  → **코드 의미 + 구조적 맥락**까지 이해
+
+### 🤖 4) **17개 전문 LLM 에이전트로 품질/보안/성능 분석**
+
+* Quality
+* Security
+* Performance
+* Architecture
+  각 영역 전문 AI가 병렬로 분석
+
+### 📊 5) **실시간 리포트**
+
+React 기반 UI로 보기 쉽게 제공
+→ HR팀도 기술 없이 검증 가능
+
+---
+
+# 🏗️ 3. 전체 아키텍처 (Architecture)
+
+<div align="center">
+
+```
+React → FastAPI → AWS Batch → Deep Agent (LangGraph)
+                         ↓
+               Neo4j / ChromaDB / S3
+```
+
+</div>
+
+### Deep Agent는 이렇게 작동합니다:
+
+```
+Setup → Static Analysis → Commit Analysis → RAG → Eval → Report
+       (병렬)                 (그래프)           (LLM)
+```
+
+각 분석은 **LangGraph 기반 17개 Multi-Agent**가 비동기 병렬 수행.
+
+→ **파일 수 200+, 커밋 500+ 레포지토리도 2~5분 내 분석**
+
+---
+
+# 🤯 4. 우리의 기술 난제 해결 (Technical Challenges Solved)
+
+### ✔ Git commit authorship 정밀 식별
+
+PyDriller로 commit traversal → Neo4j 그래프 구축 → 작성자 = 확실하게 식별
+
+### ✔ 함수 단위 파싱
+
+Tree-sitter로 파이썬·JS·TS 코드 분석 → Cyclomatic complexity까지 측정
+
+### ✔ Hybrid RAG
+
+* Vector RAG: 의미 기반 코드 유사도
+* Graph RAG: 구조 기반 컨텍스트
+  → AI가 단순 요약이 아닌 **정확한 판단** 수행
+
+### ✔ Multi-Agent 병렬 처리
+
+LangGraph 기반
+
+* Level 1: Static / Commit / RAG 분석
+* Level 2: Commit Evaluator 병렬 수백 개
+* Level 3: 보안/품질/성능/아키텍처 전문가 에이전트
+  → 전체 파이프라인 처리 시간 **극적으로 단축**
+
+---
+
+# 🧪 5. 사용 방법
+
+### 🔹 Step 1. GitHub OAuth 로그인
+
+### 🔹 Step 2. 분석할 레포 선택
+
+### 🔹 Step 3. "분석 시작" 클법
+
+### 🔹 Step 4. 실시간 진행률 확인
+
+### 🔹 Step 5. 최종 리포트 열람
+
+**Demo URL:** [https://sesami.crimecat.org/](https://sesami.crimecat.org/)
+(git oauth Login)
+
+---
+
+# 📦 6. 프로젝트 구조 (정리본)
+
+```
+Sesami/
+├── deepagent/            # Deep Agent AI 엔진
+│   ├── agents/           # 17개 LLM Agent
+│   ├── core/             # LangGraph Orchestrator
+│   ├── shared/           # Neo4j/ChromaDB 도구
+│   └── main.py           # CLI 실행
+│
+├── src/
+│   ├── frontend/         # React + Vite UI
+│   ├── backend/          # FastAPI API
+│   └── shared/           # 공통 Schema/Model
+│
+├── docker/               # Docker 배포 구성
+└── docker-compose.yml
+```
+
+---
+
+# 🚀 7. 빠른 실행 (Quick Start)
+
+## 개발 환경 실행
+
+```bash
+make dev
+```
+
+## Deep Agent 단독 실행
+
+```bash
+python deepagent/main.py --git-url https://github.com/user/repo
+```
+
+---
+
+# 📊 8. 결과 출력 예시 (Sample Output)
+
+### ✔ 코드 품질 진단
+
+* 함수 복잡도
+* 구조적 개선 포인트
+* 잠재적 버그
+* 테스트 커버리지 부족 영역
+
+### ✔ 개발자 스킬 프로파일
+
+AI가 정리한 “개발자 스킬·역량·패턴”
+
+### ✔ 아키텍처 관점 분석
+
+MVC 패턴 적용 여부
+DB 연동 구조
+비동기 처리 방식
+메모리/성능 이슈 등
+
+### ✔ 증거 기반 리포트
+
+모든 판단에는 commit hash + code block이 증거로 포함됨
+
+---
+
+# 🔥 9. 왜 해커톤에서 우승할 프로젝트인가? (Why This Project Wins)
+
+### 1) **HR-Tech + AI + GraphDB + Multi-Agent**
+
+현재 가장 뜨거운 기술 4개가 유기적으로 결합된 솔루션.
+
+### 2) **명확한 문제 해결 → 기업 니즈 직결**
+
+실제 인사팀/CTO가 직면한 문제를 정확히 해결.
+
+### 3) **확실한 기술력 차별화**
+
+* AST 파싱
+* Commit Authorship
+* LangGraph
+* RAG Hybrid
+* AWS Batch 병렬 처리
+  이 정도 기술 조합은 해커톤에서 극소수 팀만 구현 가능.
+
+### 4) **시연이 강력함**
+
+레포지토리 선택 → 분석 → 상세 리포트가 뜨는 과정 자체가 “와!”가 나옴.
+
+### 5) **이미 실서비스 수준 완성도**
+
+Demo URL + FastAPI + React + Docker 구성까지 완비.
+
+---
+
+# 🌱 10. 향후 확장성 (Future Work)
+
+* 다국어 코드 분석(LangChain Tools)
+* Go / Rust / Java / C++ 확장
+* GitLab / Bitbucket 지원
+* AI 인터뷰 솔루션 연동
+* 기업용 관리자 페이지 (채용 파이프라인 자동화)
+* 인재 매칭 추천 엔진 (개발자 ↔ 기업 매칭)
+
+---
+
+# 👥 11. 팀 소개
+
+| 이름             | 역할                    | GitHub                                                         |
+| -------------- | --------------------- | -------------------------------------------------------------- |
+| **alsksssass** | 인프라·백엔드·Deep Agent 총괄 | [https://github.com/alsksssass](https://github.com/alsksssass) |
+| **smj53**      | Deep Agent 개발         | [https://github.com/smj53](https://github.com/smj53)           |
+| **somilee**    | 프론트엔드 개발              | [https://github.com/somilee](https://github.com/somilee)       |
+
+---
+
+<div align="center">
+
+# ❤️ Sesami v4.0
+
+### “AI가 개발자의 실력을 진짜로 이해하도록 만들다.”
+
+👉 Demo: [https://sesami.crimecat.org](https://sesami.crimecat.org)
+👉 Repo: [https://github.com/alsksssass/Sesami](https://github.com/alsksssass/Sesami)
+
+</div>
+
+--
