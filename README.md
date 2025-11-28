@@ -251,7 +251,7 @@ Demo URL + FastAPI + React + Docker 구성까지 완비.
 | 이름             | 역할                    | GitHub                                                         |
 | -------------- | --------------------- | -------------------------------------------------------------- |
 | **alsksssass** | 인프라·백엔드·Deep Agent 총괄 | [https://github.com/alsksssass](https://github.com/alsksssass) |
-| **smj53**      | Deep Agent 개발         | [https://github.com/smj53](https://github.com/smj53)           |
+| **smj53**      | 백엔드·Deep Agent 개발      | [https://github.com/smj53](https://github.com/smj53)           |
 | **somilee**    | 프론트엔드 개발              | [https://github.com/somilee](https://github.com/somilee)       |
 
 ---
